@@ -48,6 +48,7 @@
                         <goals><goal>shade</goal></goals>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <outputFile>${project.build.directory}/Npcfant-${project.version}.jar</outputFile>
                             <relocations>
                                 <relocation>
                                     <pattern>com.google.gson</pattern>

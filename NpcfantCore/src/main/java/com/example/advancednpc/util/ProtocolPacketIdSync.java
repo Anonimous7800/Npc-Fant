@@ -150,6 +150,7 @@ public final class ProtocolPacketIdSync {
         mapClient("tag_query", PacketType.Play.Server.NBT_QUERY_RESPONSE);
         mapClient("take_item_entity", PacketType.Play.Server.COLLECT_ITEM);
         mapClient("teleport_entity", PacketType.Play.Server.ENTITY_TELEPORT);
+        mapClient("entity_position_sync", PacketType.Play.Server.ENTITY_TELEPORT);
         mapClient("test_instance_block_status", PacketType.Play.Server.TEST_INSTANCE_BLOCK_STATUS);
         mapClient("ticking_state", PacketType.Play.Server.TICKING_STATE);
         mapClient("ticking_step", PacketType.Play.Server.TICKING_STEP);

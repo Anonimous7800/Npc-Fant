@@ -53,6 +53,7 @@ public class NPCManager implements INPCManager, Listener {
 
     private final Map<UUID, NPCEntity> npcs = new LinkedHashMap<>();
     private final Map<Integer, NPCEntity> entityIdMap = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> lastInteractDebounce = new ConcurrentHashMap<>();
 
     public NPCManager(JavaPlugin plugin, HologramManager hologramManager,
                       CooldownManager cooldownManager) {
@@ -84,13 +85,17 @@ public class NPCManager implements INPCManager, Listener {
                 if (npc == null) return;
 
                 WrapperPlayClientInteractEntity.InteractAction action = wrapper.getAction();
-                if (action == WrapperPlayClientInteractEntity.InteractAction.INTERACT_AT) {
-                    return;
-                }
-                if (action == WrapperPlayClientInteractEntity.InteractAction.INTERACT
+                if (action != WrapperPlayClientInteractEntity.InteractAction.ATTACK
                         && wrapper.getHand() == InteractionHand.OFF_HAND) {
                     return;
                 }
+
+                long now = System.currentTimeMillis();
+                Long lastTime = lastInteractDebounce.get(player.getUniqueId());
+                if (lastTime != null && (now - lastTime) < 150) {
+                    return;
+                }
+                lastInteractDebounce.put(player.getUniqueId(), now);
 
                 NPCInteractEvent.InteractType interactType =
                     (action == WrapperPlayClientInteractEntity.InteractAction.ATTACK)
@@ -106,8 +111,7 @@ public class NPCManager implements INPCManager, Listener {
     private void handleInteraction(Player player, NPCEntity npc, NPCInteractEvent.InteractType type) {
         if (!player.isOnline()) return;
 
-        if (player.isSneaking() && type == NPCInteractEvent.InteractType.LEFT_CLICK
-                && (player.isOp() || player.hasPermission("npcfant.admin"))) {
+        if (player.isSneaking() && (player.isOp() || player.hasPermission("npcfant.admin"))) {
             if (editorGUI != null) {
                 editorGUI.openEditor(player, npc);
                 return;

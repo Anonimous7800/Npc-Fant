@@ -57,6 +57,7 @@ public class FakePlayerNPC {
 
     private final Set<UUID> spawnedFor     = ConcurrentHashMap.newKeySet();
     private final Set<UUID> teamCreatedFor = ConcurrentHashMap.newKeySet();
+    private final Map<UUID, float[]> lastLookAngles = new ConcurrentHashMap<>();
 
     public FakePlayerNPC(UUID uuid, String name, Location location, Plugin plugin) {
         this.uuid        = uuid;
@@ -160,6 +161,7 @@ public class FakePlayerNPC {
     public void removePlayerFromTracking(UUID playerId) {
         spawnedFor.remove(playerId);
         teamCreatedFor.remove(playerId);
+        lastLookAngles.remove(playerId);
     }
 
     public void respawnForAll() {
@@ -275,19 +277,19 @@ public class FakePlayerNPC {
     }
 
     private void sendRotationPackets(Player player, float yaw, float pitch) {
+        if (player == null || !player.isOnline()) return;
+        UUID uid = player.getUniqueId();
+        float[] last = lastLookAngles.get(uid);
+        if (last != null && Math.abs(last[0] - yaw) < 0.5f && Math.abs(last[1] - pitch) < 0.5f) {
+            return;
+        }
+        lastLookAngles.put(uid, new float[]{yaw, pitch});
+
         try {
-            WrapperPlayServerEntityTeleport tpPacket = new WrapperPlayServerEntityTeleport(
-                entityId,
-                new Vector3d(location.getX(), location.getY(), location.getZ()),
-                yaw,
-                pitch,
-                true
-            );
-            WrapperPlayServerEntityHeadLook headLookPacket =
-                new WrapperPlayServerEntityHeadLook(entityId, yaw);
             WrapperPlayServerEntityRotation rotPacket =
                 new WrapperPlayServerEntityRotation(entityId, yaw, pitch, true);
-            PacketEvents.getAPI().getPlayerManager().sendPacket(player, tpPacket);
+            WrapperPlayServerEntityHeadLook headLookPacket =
+                new WrapperPlayServerEntityHeadLook(entityId, yaw);
             PacketEvents.getAPI().getPlayerManager().sendPacket(player, rotPacket);
             PacketEvents.getAPI().getPlayerManager().sendPacket(player, headLookPacket);
         } catch (Exception ignored) {}

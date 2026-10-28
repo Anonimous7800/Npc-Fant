@@ -41,10 +41,6 @@ public class NPCEditorGUI implements Listener {
         editingNpcMap.put(player.getUniqueId(), npc.getId());
 
         String title = GUI_TITLE_PREFIX + ChatColor.stripColor(npc.getName());
-        if (title.length() > 32) {
-            title = title.substring(0, 32);
-        }
-
         Inventory inv = Bukkit.createInventory(null, GUI_SIZE, title);
 
         ItemStack border = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", null, null);
@@ -180,10 +176,11 @@ public class NPCEditorGUI implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
+        UUID npcId = editingNpcMap.get(player.getUniqueId());
         String title = event.getView().getTitle();
-        if (title == null || !title.startsWith(GUI_TITLE_PREFIX)) return;
+        boolean isOurTitle = title != null && title.startsWith(GUI_TITLE_PREFIX);
+        if (npcId == null && !isOurTitle) return;
 
-        event.setCancelled(true);
         ItemStack item = event.getCurrentItem();
         if (item == null || !item.hasItemMeta()) return;
 
@@ -191,6 +188,9 @@ public class NPCEditorGUI implements Listener {
         if (meta == null) return;
 
         String action = meta.getPersistentDataContainer().get(keyAction, PersistentDataType.STRING);
+        if (action == null && !isOurTitle) return;
+
+        event.setCancelled(true);
         if (action == null) return;
 
         UUID npcId = editingNpcMap.get(player.getUniqueId());
@@ -322,10 +322,7 @@ public class NPCEditorGUI implements Listener {
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
-        String title = event.getView().getTitle();
-        if (title != null && title.startsWith(GUI_TITLE_PREFIX)) {
-            editingNpcMap.remove(event.getPlayer().getUniqueId());
-        }
+        editingNpcMap.remove(event.getPlayer().getUniqueId());
     }
 
     private ItemStack makeItem(Material material, String name, String action, List<String> lore) {
