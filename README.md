@@ -1,9 +1,15 @@
-# Npc-Fant (v2.0)
+<p align="center">
+  <img src="logo/logo.png" alt="NpcFant Logo" width="280" />
+</p>
 
-![Version](https://img.shields.io/badge/Version-2.0.0-brightgreen)
-![Minecraft](https://img.shields.io/badge/Minecraft-1.17%20--%2026.3-blue)
-![Java](https://img.shields.io/badge/Java-17%2B-orange)
-![License](https://img.shields.io/badge/License-MIT-purple)
+<h1 align="center">Npc-Fant (v2.0)</h1>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Version-2.0.0-brightgreen" alt="Version" />
+  <img src="https://img.shields.io/badge/Minecraft-1.17%20--%2026.3-blue" alt="Minecraft" />
+  <img src="https://img.shields.io/badge/Java-17%2B-orange" alt="Java" />
+  <img src="https://img.shields.io/badge/License-MIT-purple" alt="License" />
+</p>
 
 **Npc-Fant** es un plugin avanzado de NPCs para servidores de Minecraft (Spigot, Paper, Purpur y forks) basado en paquetes (**PacketEvents**). Permite crear NPCs ligeros tipo jugador (`FakePlayer`) o de cualquier entidad, con soporte completo para skins personalizadas, menú interactivo (GUI), hologramas integrados, poses, equipamiento, visibilidad por jugador y cadenas de acciones al hacer clic.
 
