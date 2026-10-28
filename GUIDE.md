@@ -48,3 +48,4 @@ When adding actions via `/npcfant action <npc> add <cmd|console|opcmd|message|so
 - `{player}` — Name of the player who clicked the NPC
 - `{uuid}` — UUID of the player
 - `{npc}` — UUID of the NPC
+
