@@ -42,6 +42,10 @@ public class HoloCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length == 0) {
+            if (plugin.getStandaloneHologramGUI() != null) {
+                plugin.getStandaloneHologramGUI().openHologramList(player);
+                return true;
+            }
             sendHelp(player);
             return true;
         }
@@ -50,16 +54,25 @@ public class HoloCommand implements CommandExecutor, TabCompleter {
         switch (sub) {
             case "gui":
             case "menu": {
-                Optional<NPCEntity> target = plugin.getNpcManager().getNearestNPC(player.getLocation(), 15.0);
-                if (target.isPresent()) {
-                    if (plugin.getNpcManager().getHologramGUI() != null) {
-                        plugin.getNpcManager().getHologramGUI().openGUI(player, target.get());
-                    }
-                } else {
-                    player.sendMessage(getPrefix() + "§cNo hay ningún NPC cercano para abrir el editor de hologramas visual.");
+                if (plugin.getStandaloneHologramGUI() != null) {
+                    plugin.getStandaloneHologramGUI().openHologramList(player);
+                    return true;
                 }
                 break;
             }
+
+            case "edit": {
+                if (plugin.getStandaloneHologramGUI() != null) {
+                    if (args.length >= 2) {
+                        plugin.getStandaloneHologramGUI().openEditor(player, args[1].toLowerCase());
+                    } else {
+                        plugin.getStandaloneHologramGUI().openHologramList(player);
+                    }
+                    return true;
+                }
+                break;
+            }
+
             case "create": {
                 if (args.length < 2) {
                     player.sendMessage(getPrefix() + "§cUso: /" + label + " create <nombre> [texto inicial...]");
@@ -76,7 +89,6 @@ public class HoloCommand implements CommandExecutor, TabCompleter {
                     initialLines.add(String.join(" ", Arrays.copyOfRange(args, 2, args.length)));
                 } else {
                     initialLines.add("§e§l" + name.toUpperCase());
-                    initialLines.add("§7Usa /holo add " + name + " <texto>");
                 }
                 hologramManager.createNamedHologram(name, loc, initialLines);
                 player.sendMessage(getPrefix() + "§aHolograma '§e" + name + "§a' creado en tu ubicación.");
@@ -117,8 +129,7 @@ public class HoloCommand implements CommandExecutor, TabCompleter {
                 break;
             }
 
-            case "set":
-            case "edit": {
+            case "set": {
                 if (args.length < 4) {
                     player.sendMessage(getPrefix() + "§cUso: /" + label + " set <nombre> <índice> <texto...>");
                     return true;
@@ -260,6 +271,8 @@ public class HoloCommand implements CommandExecutor, TabCompleter {
 
     private void sendHelp(Player player) {
         player.sendMessage("§6════ NpcFant — Hologramas ════");
+        player.sendMessage("§e/holo gui                    §7— Abre el menú interactivo de hologramas");
+        player.sendMessage("§e/holo edit <nombre>           §7— Abre el editor interactivo del holograma");
         player.sendMessage("§e/holo create <nombre> [texto] §7— Crea un holograma en el mapa");
         player.sendMessage("§e/holo remove <nombre>         §7— Elimina un holograma");
         player.sendMessage("§e/holo add <nombre> <texto>    §7— Añade una línea al holograma");
@@ -274,10 +287,10 @@ public class HoloCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            List<String> subs = Arrays.asList("create", "remove", "add", "set", "insert", "removeline", "move", "tp", "list");
+            List<String> subs = Arrays.asList("gui", "edit", "create", "remove", "add", "set", "insert", "removeline", "move", "tp", "list");
             return subs.stream().filter(s -> s.startsWith(args[0].toLowerCase())).collect(Collectors.toList());
         }
-        if (args.length == 2 && !args[0].equalsIgnoreCase("create") && !args[0].equalsIgnoreCase("list")) {
+        if (args.length == 2 && !args[0].equalsIgnoreCase("create") && !args[0].equalsIgnoreCase("list") && !args[0].equalsIgnoreCase("gui")) {
             return hologramManager.getNamedHolograms().keySet().stream()
                 .filter(k -> k.startsWith(args[1].toLowerCase()))
                 .collect(Collectors.toList());

@@ -43,6 +43,7 @@ public class AdvancedNPCPlugin extends JavaPlugin {
     private com.example.advancednpc.modules.gui.NPCNameColorGUI npcNameColorGUI;
     private com.example.advancednpc.modules.gui.NPCHologramGUI  npcHologramGUI;
     private com.example.advancednpc.modules.gui.NPCSelectorGUI  npcSelectorGUI;
+    private com.example.advancednpc.modules.gui.StandaloneHologramGUI standaloneHologramGUI;
     private NPCStorage         npcStorage;
 
     @Override
@@ -135,6 +136,7 @@ public class AdvancedNPCPlugin extends JavaPlugin {
         this.npcNameColorGUI = new com.example.advancednpc.modules.gui.NPCNameColorGUI(this);
         this.npcHologramGUI  = new com.example.advancednpc.modules.gui.NPCHologramGUI(this);
         this.npcSelectorGUI  = new com.example.advancednpc.modules.gui.NPCSelectorGUI(this);
+        this.standaloneHologramGUI = new com.example.advancednpc.modules.gui.StandaloneHologramGUI(this, this.hologramManager);
 
         this.npcManager.setSkinManager(skinManager);
         this.npcManager.setStorage(npcStorage);
@@ -171,6 +173,7 @@ public class AdvancedNPCPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(npcNameColorGUI, this);
         getServer().getPluginManager().registerEvents(npcHologramGUI, this);
         getServer().getPluginManager().registerEvents(npcSelectorGUI, this);
+        getServer().getPluginManager().registerEvents(standaloneHologramGUI, this);
 
         getServer().getScheduler().runTaskLater(this, () -> npcManager.loadAll(), 40L);
 
@@ -210,5 +213,6 @@ public class AdvancedNPCPlugin extends JavaPlugin {
     public com.example.advancednpc.modules.gui.NPCNameColorGUI getNPCNameColorGUI() { return npcNameColorGUI; }
     public com.example.advancednpc.modules.gui.NPCHologramGUI  getNPCHologramGUI()  { return npcHologramGUI; }
     public com.example.advancednpc.modules.gui.NPCSelectorGUI  getNPCSelectorGUI()  { return npcSelectorGUI; }
+    public com.example.advancednpc.modules.gui.StandaloneHologramGUI getStandaloneHologramGUI() { return standaloneHologramGUI; }
     public NPCStorage         getNpcStorage()          { return npcStorage; }
 }

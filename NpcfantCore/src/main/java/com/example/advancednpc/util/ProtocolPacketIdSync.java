@@ -26,7 +26,6 @@ public final class ProtocolPacketIdSync {
         mapClient("bundle", PacketType.Play.Server.BUNDLE);
         mapClient("add_entity", PacketType.Play.Server.SPAWN_ENTITY);
         mapClient("animate", PacketType.Play.Server.ENTITY_ANIMATION);
-        mapClient("swing_animation", PacketType.Play.Server.ENTITY_ANIMATION);
         mapClient("award_stats", PacketType.Play.Server.STATISTICS);
         mapClient("block_changed_ack", PacketType.Play.Server.ACKNOWLEDGE_BLOCK_CHANGES);
         mapClient("block_destruction", PacketType.Play.Server.BLOCK_BREAK_ANIMATION);
@@ -231,7 +230,6 @@ public final class ProtocolPacketIdSync {
         mapServer("sign_update", PacketType.Play.Client.UPDATE_SIGN);
         mapServer("spectate_entity", PacketType.Play.Client.SPECTATE_ENTITY);
         mapServer("swing", PacketType.Play.Client.ANIMATION);
-        mapServer("punch", PacketType.Play.Client.ANIMATION);
         mapServer("spectator_action", PacketType.Play.Client.SPECTATE_ENTITY);
         mapServer("teleport_to_entity", PacketType.Play.Client.SPECTATE);
         mapServer("test_instance_block_action", PacketType.Play.Client.TEST_INSTANCE_BLOCK_ACTION);
