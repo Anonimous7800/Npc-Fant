@@ -13,8 +13,14 @@ import com.example.advancednpc.modules.skin.NPCStorage;
 import com.example.advancednpc.modules.skin.SkinManager;
 import com.example.advancednpc.npc.NPCManager;
 import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.manager.server.ServerManager;
+import com.github.retrooper.packetevents.manager.server.ServerVersion;
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 public class AdvancedNPCPlugin extends JavaPlugin {
 
@@ -32,11 +38,69 @@ public class AdvancedNPCPlugin extends JavaPlugin {
 
     @Override
     public void onLoad() {
+        patchPacketEventsVersionBeforeBuild();
         PacketEvents.setAPI(SpigotPacketEventsBuilder.build(this));
+        patchPacketEventsServerManager();
         PacketEvents.getAPI().getSettings()
             .reEncodeByDefault(false)
             .checkForUpdates(false);
         PacketEvents.getAPI().load();
+    }
+
+    private void patchPacketEventsVersionBeforeBuild() {
+        try {
+            String bukkitVersion = Bukkit.getBukkitVersion();
+            for (ServerVersion v : ServerVersion.reversedValues()) {
+                if (v != ServerVersion.ERROR && bukkitVersion.contains(v.getReleaseName())) {
+                    return;
+                }
+            }
+
+            String mcVersion;
+            try {
+                mcVersion = Bukkit.getMinecraftVersion();
+            } catch (Throwable t) {
+                int dash = bukkitVersion.indexOf('-');
+                mcVersion = dash != -1 ? bukkitVersion.substring(0, dash) : bukkitVersion;
+            }
+
+            ServerVersion latest = ServerVersion.getLatest();
+            Field nameField = ServerVersion.class.getDeclaredField("name");
+            try {
+                Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
+                Field theUnsafeField = unsafeClass.getDeclaredField("theUnsafe");
+                theUnsafeField.setAccessible(true);
+                Object unsafe = theUnsafeField.get(null);
+                Method objectFieldOffset = unsafeClass.getMethod("objectFieldOffset", Field.class);
+                Method putObject = unsafeClass.getMethod("putObject", Object.class, long.class, Object.class);
+                long offset = (long) objectFieldOffset.invoke(unsafe, nameField);
+                putObject.invoke(unsafe, latest, offset, mcVersion);
+            } catch (Throwable ignored) {
+                nameField.setAccessible(true);
+                nameField.set(latest, mcVersion);
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private void patchPacketEventsServerManager() {
+        try {
+            ServerManager sm = PacketEvents.getAPI().getServerManager();
+            String bukkitVersion = Bukkit.getBukkitVersion();
+            boolean matched = false;
+            for (ServerVersion v : ServerVersion.reversedValues()) {
+                if (v != ServerVersion.ERROR && bukkitVersion.contains(v.getReleaseName())) {
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) {
+                Field svField = sm.getClass().getDeclaredField("serverVersion");
+                svField.setAccessible(true);
+                svField.set(sm, ServerVersion.getLatest());
+            }
+        } catch (Throwable ignored) {
+        }
     }
 
     @Override
