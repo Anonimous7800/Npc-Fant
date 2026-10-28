@@ -38,6 +38,8 @@ public class AdvancedNPCPlugin extends JavaPlugin {
     private SkinMenuGUI        skinMenuGUI;
     private NPCEditorGUI       npcEditorGUI;
     private com.example.advancednpc.modules.gui.NPCActionGUI npcActionGUI;
+    private com.example.advancednpc.modules.gui.NPCPoseGUI   npcPoseGUI;
+    private com.example.advancednpc.modules.gui.NPCGlowGUI   npcGlowGUI;
     private NPCStorage         npcStorage;
 
     @Override
@@ -123,6 +125,8 @@ public class AdvancedNPCPlugin extends JavaPlugin {
         this.skinMenuGUI     = new SkinMenuGUI(this);
         this.npcEditorGUI    = new NPCEditorGUI(this);
         this.npcActionGUI    = new com.example.advancednpc.modules.gui.NPCActionGUI(this);
+        this.npcPoseGUI      = new com.example.advancednpc.modules.gui.NPCPoseGUI(this);
+        this.npcGlowGUI      = new com.example.advancednpc.modules.gui.NPCGlowGUI(this);
 
         this.npcManager.setSkinManager(skinManager);
         this.npcManager.setStorage(npcStorage);
@@ -152,6 +156,8 @@ public class AdvancedNPCPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(skinMenuGUI, this);
         getServer().getPluginManager().registerEvents(npcEditorGUI, this);
         getServer().getPluginManager().registerEvents(npcActionGUI, this);
+        getServer().getPluginManager().registerEvents(npcPoseGUI, this);
+        getServer().getPluginManager().registerEvents(npcGlowGUI, this);
 
         getServer().getScheduler().runTaskLater(this, () -> npcManager.loadAll(), 40L);
 
@@ -186,5 +192,7 @@ public class AdvancedNPCPlugin extends JavaPlugin {
     public SkinMenuGUI        getSkinMenuGUI()         { return skinMenuGUI; }
     public NPCEditorGUI       getNPCEditorGUI()        { return npcEditorGUI; }
     public com.example.advancednpc.modules.gui.NPCActionGUI getNPCActionGUI() { return npcActionGUI; }
+    public com.example.advancednpc.modules.gui.NPCPoseGUI   getNPCPoseGUI()   { return npcPoseGUI; }
+    public com.example.advancednpc.modules.gui.NPCGlowGUI   getNPCGlowGUI()   { return npcGlowGUI; }
     public NPCStorage         getNpcStorage()          { return npcStorage; }
 }

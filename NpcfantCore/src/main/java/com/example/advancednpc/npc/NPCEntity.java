@@ -135,7 +135,7 @@ public class NPCEntity implements INPC {
     public String getGlowColor() { return glowColor; }
     public void setGlowColor(String c) {
         this.glowColor = c;
-        fakePlayer.setGlowing(c != null && !c.isEmpty() && !c.equalsIgnoreCase("off"));
+        fakePlayer.setGlowColor(c);
     }
 
     public boolean isInvisible() { return invisible; }

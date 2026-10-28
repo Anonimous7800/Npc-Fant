@@ -61,9 +61,8 @@ public class NPCEditorGUI implements Listener {
             Arrays.asList(
                 "§7Pose actual: §a" + currentPose.name(),
                 "",
-                "§fClic Izquierdo: §7Siguiente pose",
-                "§fClic Derecho: §7Pose anterior",
-                "§8Opciones: STANDING, SNEAKING, SITTING, SLEEPING, SWIMMING"
+                "§eClic para abrir el menú de poses",
+                "§8(De pie, Agachado, Sentado, Durmiendo, etc.)"
             )
         ));
 
@@ -99,8 +98,7 @@ public class NPCEditorGUI implements Listener {
             Arrays.asList(
                 "§7Estado: " + (hasGlow ? "§a" + glow : "§cDesactivado"),
                 "",
-                "§eClic para alternar colores",
-                "§8(RED, GOLD, GREEN, AQUA, BLUE, LIGHT_PURPLE, WHITE, OFF)"
+                "§eClic para abrir la paleta de colores de Glow"
             )
         ));
 
@@ -224,24 +222,8 @@ public class NPCEditorGUI implements Listener {
             case "close" -> player.closeInventory();
 
             case "pose" -> {
-                NPCPose[] poses = NPCPose.values();
-                int idx = 0;
-                for (int i = 0; i < poses.length; i++) {
-                    if (poses[i] == npc.getPose()) {
-                        idx = i;
-                        break;
-                    }
-                }
-                if (event.isRightClick()) {
-                    idx = (idx - 1 + poses.length) % poses.length;
-                } else {
-                    idx = (idx + 1) % poses.length;
-                }
-                NPCPose newPose = poses[idx];
-                npc.setPose(newPose);
-                nm.saveNPC(npc);
-                player.sendMessage("§a[NpcFant] Pose cambiada a: §e" + newPose.name());
-                openEditor(player, npc);
+                player.closeInventory();
+                plugin.getNPCPoseGUI().openGUI(player, npc);
             }
 
             case "skin" -> {
@@ -263,20 +245,8 @@ public class NPCEditorGUI implements Listener {
             }
 
             case "glow" -> {
-                String[] colors = {"RED", "GOLD", "GREEN", "AQUA", "BLUE", "LIGHT_PURPLE", "WHITE", null};
-                int idx = colors.length - 1;
-                for (int i = 0; i < colors.length; i++) {
-                    if (Objects.equals(colors[i], npc.getGlowColor())) {
-                        idx = i;
-                        break;
-                    }
-                }
-                idx = (idx + 1) % colors.length;
-                String newColor = colors[idx];
-                npc.setGlowColor(newColor);
-                nm.saveNPC(npc);
-                player.sendMessage("§a[NpcFant] Glow cambiado a: §e" + (newColor == null ? "Desactivado" : newColor));
-                openEditor(player, npc);
+                player.closeInventory();
+                plugin.getNPCGlowGUI().openGUI(player, npc);
             }
 
             case "equip" -> {

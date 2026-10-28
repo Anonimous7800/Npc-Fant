@@ -51,6 +51,7 @@ public class FakePlayerNPC {
     private       NPCEquipment equipment    = new NPCEquipment();
     private       boolean      invisible    = false;
     private       boolean      glowing      = false;
+    private       String       glowColor;
     private       boolean      showNametag  = true;
     private volatile boolean   respawning   = false;
     private final Plugin       plugin;
@@ -258,6 +259,7 @@ public class FakePlayerNPC {
         double   dz   = tEye.getZ() - eye.getZ();
         double   dist = Math.sqrt(dx * dx + dz * dz);
         float    yaw   = (float)(Math.toDegrees(Math.atan2(-dx, dz)));
+        if (yaw < 0) yaw += 360f;
         float    pitch = (float)(-Math.toDegrees(Math.atan2(dy, dist)));
 
         sendRotationPackets(target, yaw, pitch);
@@ -273,12 +275,12 @@ public class FakePlayerNPC {
         lastLookAngles.put(uid, new float[]{yaw, pitch});
 
         try {
-            WrapperPlayServerEntityRotation rotPacket =
-                new WrapperPlayServerEntityRotation(entityId, yaw, pitch, true);
             WrapperPlayServerEntityHeadLook headLookPacket =
                 new WrapperPlayServerEntityHeadLook(entityId, yaw);
-            PacketEvents.getAPI().getPlayerManager().sendPacket(player, rotPacket);
+            WrapperPlayServerEntityRotation rotPacket =
+                new WrapperPlayServerEntityRotation(entityId, yaw, pitch, true);
             PacketEvents.getAPI().getPlayerManager().sendPacket(player, headLookPacket);
+            PacketEvents.getAPI().getPlayerManager().sendPacket(player, rotPacket);
         } catch (Exception ignored) {}
     }
 
@@ -295,11 +297,26 @@ public class FakePlayerNPC {
         return stripped;
     }
 
+    private NamedTextColor resolveTeamColor(String colorName) {
+        if (colorName == null) return NamedTextColor.WHITE;
+        return switch (colorName.toUpperCase()) {
+            case "RED"          -> NamedTextColor.RED;
+            case "GOLD"         -> NamedTextColor.GOLD;
+            case "YELLOW"       -> NamedTextColor.YELLOW;
+            case "GREEN"        -> NamedTextColor.GREEN;
+            case "AQUA"         -> NamedTextColor.AQUA;
+            case "BLUE"         -> NamedTextColor.BLUE;
+            case "LIGHT_PURPLE" -> NamedTextColor.LIGHT_PURPLE;
+            default             -> NamedTextColor.WHITE;
+        };
+    }
+
     private void sendHideNametagTeamPacket(Player player) {
         try {
             if (!teamCreatedFor.add(player.getUniqueId())) return;
             String teamName = "npc_" + (entityId % 100000);
             String profileName = getSafeProfileName();
+            NamedTextColor teamColor = resolveTeamColor(this.glowColor);
             WrapperPlayServerTeams.ScoreBoardTeamInfo teamInfo =
                 new WrapperPlayServerTeams.ScoreBoardTeamInfo(
                     Component.empty(),
@@ -307,7 +324,7 @@ public class FakePlayerNPC {
                     Component.empty(),
                     WrapperPlayServerTeams.NameTagVisibility.NEVER,
                     WrapperPlayServerTeams.CollisionRule.NEVER,
-                    NamedTextColor.WHITE,
+                    teamColor,
                     WrapperPlayServerTeams.OptionData.NONE
                 );
             WrapperPlayServerTeams teamPacket = new WrapperPlayServerTeams(
@@ -320,18 +337,47 @@ public class FakePlayerNPC {
         } catch (Exception ignored) {}
     }
 
-    private boolean hasValidSignedTexture() {
-        return skinData != null
-            && skinData.getValue() != null
-            && !skinData.getValue().trim().isEmpty()
-            && skinData.getSignature() != null
-            && !skinData.getSignature().trim().isEmpty();
+    public void updateTeamForAll() {
+        String teamName = "npc_" + (entityId % 100000);
+        NamedTextColor teamColor = resolveTeamColor(this.glowColor);
+        WrapperPlayServerTeams.ScoreBoardTeamInfo teamInfo =
+            new WrapperPlayServerTeams.ScoreBoardTeamInfo(
+                Component.empty(),
+                Component.empty(),
+                Component.empty(),
+                WrapperPlayServerTeams.NameTagVisibility.NEVER,
+                WrapperPlayServerTeams.CollisionRule.NEVER,
+                teamColor,
+                WrapperPlayServerTeams.OptionData.NONE
+            );
+        WrapperPlayServerTeams teamPacket = new WrapperPlayServerTeams(
+            teamName,
+            WrapperPlayServerTeams.TeamMode.UPDATE,
+            teamInfo,
+            Collections.emptyList()
+        );
+        for (UUID uid : new HashSet<>(spawnedFor)) {
+            Player p = Bukkit.getPlayer(uid);
+            if (p != null && p.isOnline()) {
+                PacketEvents.getAPI().getPlayerManager().sendPacket(p, teamPacket);
+            }
+        }
+    }
+
+    public void setGlowColor(String color) {
+        this.glowColor = (color != null && !color.equalsIgnoreCase("off")) ? color.toUpperCase() : null;
+        this.glowing = this.glowColor != null;
+        updateTeamForAll();
+        updateMetadataForAll();
     }
 
     private void sendAddToTabList(Player player, UUID activeProfileUuid) {
         List<TextureProperty> textures = new ArrayList<>();
-        if (hasValidSignedTexture()) {
-            textures.add(new TextureProperty("textures", skinData.getValue().trim(), skinData.getSignature().trim()));
+        if (skinData != null && skinData.getValue() != null && !skinData.getValue().trim().isEmpty()) {
+            String sig = skinData.getSignature() != null && !skinData.getSignature().trim().isEmpty()
+                ? skinData.getSignature().trim()
+                : null;
+            textures.add(new TextureProperty("textures", skinData.getValue().trim(), sig));
         }
 
         String profileName = getSafeProfileName();
