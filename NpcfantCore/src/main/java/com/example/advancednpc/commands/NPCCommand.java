@@ -64,24 +64,16 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
 
             case "create": {
                 if (args.length < 2) {
-                    player.sendMessage(getPrefix() + ChatColor.RED + "Uso: /npcfant create <tipo|nombre> [nombre]");
+                    player.sendMessage(getPrefix() + ChatColor.RED + "Uso: /npcfant create <nombre>");
                     return true;
                 }
-                NPCType npcType = NPCType.PLAYER;
-                String name;
-                if (args.length == 2) {
-                    name = args[1];
-                } else {
-                    try {
-                        npcType = NPCType.valueOf(args[1].toUpperCase());
-                        name = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
-                    } catch (IllegalArgumentException ex) {
-                        name = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
-                    }
+                String name = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
+                if (name.toUpperCase().startsWith("PLAYER ") && name.length() > 7) {
+                    name = name.substring(7).trim();
                 }
-                NPCEntity created = npcManager.createNPC(name, player.getLocation(), npcType);
+                NPCEntity created = npcManager.createNPC(name, player.getLocation(), NPCType.PLAYER);
                 player.sendMessage(getPrefix() + ChatColor.GREEN + "NPC '" + ChatColor.RESET + created.getName()
-                    + ChatColor.GREEN + "' (" + npcType.name() + ") creado. ID: " + ChatColor.YELLOW + created.getId());
+                    + ChatColor.GREEN + "' (PLAYER) creado. ID: " + ChatColor.YELLOW + created.getId());
                 break;
             }
 
@@ -714,10 +706,7 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
         String sub = args[0].toLowerCase();
         if (args.length == 2) {
             if (sub.equals("create")) {
-                return Arrays.stream(NPCType.values())
-                    .map(Enum::name)
-                    .filter(s -> s.toLowerCase().startsWith(args[1].toLowerCase()))
-                    .collect(Collectors.toList());
+                return Collections.singletonList("<nombre>");
             }
             if (!sub.equals("list") && !sub.equals("reload")) {
                 List<String> suggestions = new ArrayList<>();

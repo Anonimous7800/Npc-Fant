@@ -283,6 +283,8 @@ public final class ProtocolPacketIdSync {
             }
 
             ensureConfigurationFallbacks();
+            syncEntityTypes(logger);
+            syncEntityDataSerializers(logger);
 
             if (logger != null && (updatedClient > 0 || updatedServer > 0)) {
                 logger.info("Protocol sync completado con NMS GameProtocols (Clientbound: "
@@ -564,6 +566,159 @@ public final class ProtocolPacketIdSync {
                 for (int id = 0; id < 64; id++) {
                     m.putIfAbsent(id, PacketType.Configuration.Client.PLUGIN_MESSAGE);
                 }
+            }
+        } catch (Throwable ignored) {}
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void syncEntityTypes(Logger logger) {
+        try {
+            Class<?> birClass = Class.forName("net.minecraft.core.registries.BuiltInRegistries");
+            Field etField = birClass.getDeclaredField("ENTITY_TYPE");
+            etField.setAccessible(true);
+            Object registry = etField.get(null);
+            if (registry == null) return;
+
+            Method getIdMethod = null;
+            Method getKeyMethod = null;
+            for (Method m : registry.getClass().getMethods()) {
+                if (m.getName().equals("getId") && m.getParameterCount() == 1) {
+                    getIdMethod = m;
+                } else if (m.getName().equals("getKey") && m.getParameterCount() == 1) {
+                    getKeyMethod = m;
+                }
+            }
+
+            Map<String, Integer> nmsEntityIds = new HashMap<>();
+            if (registry instanceof Iterable<?> it && getIdMethod != null && getKeyMethod != null) {
+                for (Object entry : it) {
+                    int id = (Integer) getIdMethod.invoke(registry, entry);
+                    Object key = getKeyMethod.invoke(registry, entry);
+                    if (key != null) {
+                        String fullKey = key.toString().toLowerCase(Locale.ROOT);
+                        nmsEntityIds.put(fullKey, id);
+                        int colon = fullKey.indexOf(':');
+                        if (colon != -1) {
+                            nmsEntityIds.put(fullKey.substring(colon + 1), id);
+                        }
+                    }
+                }
+            }
+
+            if (nmsEntityIds.isEmpty()) return;
+
+            Field typeIdsField = null;
+            try {
+                typeIdsField = com.github.retrooper.packetevents.util.mappings.VersionedRegistry.class.getDeclaredField("typeIds");
+                typeIdsField.setAccessible(true);
+            } catch (Throwable ignored) {}
+
+            Map<Integer, Object>[] typeIdsArray = null;
+            if (typeIdsField != null) {
+                try {
+                    typeIdsArray = (Map<Integer, Object>[]) typeIdsField.get(
+                        com.github.retrooper.packetevents.protocol.entity.type.EntityTypes.getRegistry()
+                    );
+                } catch (Throwable ignored) {}
+            }
+
+            int syncedCount = 0;
+            for (com.github.retrooper.packetevents.protocol.entity.type.EntityType peType :
+                 com.github.retrooper.packetevents.protocol.entity.type.EntityTypes.values()) {
+                if (peType instanceof com.github.retrooper.packetevents.protocol.mapper.AbstractMappedEntity mapped) {
+                    var data = mapped.getRegistryData();
+                    if (data != null && data.getName() != null) {
+                        String name = data.getName().toString().toLowerCase(Locale.ROOT);
+                        String rawName = data.getName().getKey().toLowerCase(Locale.ROOT);
+                        Integer nmsId = nmsEntityIds.get(name);
+                        if (nmsId == null) nmsId = nmsEntityIds.get(rawName);
+                        if (nmsId != null) {
+                            int[] ids = data.getData();
+                            if (ids != null && ids.length > 0) {
+                                ids[ids.length - 1] = nmsId;
+                                syncedCount++;
+                            }
+                            if (typeIdsArray != null && typeIdsArray.length > 0) {
+                                Map<Integer, Object> latestMap = typeIdsArray[typeIdsArray.length - 1];
+                                if (latestMap != null) {
+                                    latestMap.put(nmsId, peType);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (logger != null) {
+                logger.info("EntityTypes sync completado con NMS (" + syncedCount + " tipos sincronizados, PLAYER="
+                    + com.github.retrooper.packetevents.protocol.entity.type.EntityTypes.PLAYER.getId(com.github.retrooper.packetevents.protocol.player.ClientVersion.getLatest())
+                    + ", ARMOR_STAND=" + com.github.retrooper.packetevents.protocol.entity.type.EntityTypes.ARMOR_STAND.getId(com.github.retrooper.packetevents.protocol.player.ClientVersion.getLatest()) + ")");
+            }
+        } catch (Throwable ignored) {}
+    }
+
+    private static void syncEntityDataSerializers(Logger logger) {
+        try {
+            Class<?> edsClass = Class.forName("net.minecraft.network.syncher.EntityDataSerializers");
+            Method getSerializedIdMethod = null;
+            for (Method m : edsClass.getMethods()) {
+                if (m.getParameterCount() == 1 && (m.getName().equals("getSerializedId") || m.getReturnType() == int.class)) {
+                    if (m.getParameterTypes()[0].getName().contains("EntityDataSerializer")) {
+                        getSerializedIdMethod = m;
+                        break;
+                    }
+                }
+            }
+            if (getSerializedIdMethod == null) return;
+
+            Map<String, com.github.retrooper.packetevents.protocol.entity.data.EntityDataType<?>> map = new HashMap<>();
+            map.put("BYTE", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.BYTE);
+            map.put("INT", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.INT);
+            map.put("LONG", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.LONG);
+            map.put("FLOAT", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.FLOAT);
+            map.put("STRING", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.STRING);
+            map.put("COMPONENT", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.ADV_COMPONENT);
+            map.put("OPTIONAL_COMPONENT", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.OPTIONAL_ADV_COMPONENT);
+            map.put("ITEM_STACK", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.ITEMSTACK);
+            map.put("BOOLEAN", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.BOOLEAN);
+            map.put("ROTATIONS", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.ROTATION);
+            map.put("BLOCK_POS", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.BLOCK_POSITION);
+            map.put("OPTIONAL_BLOCK_POS", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.OPTIONAL_BLOCK_POSITION);
+            map.put("DIRECTION", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.BLOCK_FACE);
+            map.put("BLOCK_STATE", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.BLOCK_STATE);
+            map.put("OPTIONAL_BLOCK_STATE", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.OPTIONAL_BLOCK_STATE);
+            map.put("COMPOUND_TAG", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.NBT);
+            map.put("PARTICLE", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.PARTICLE);
+            map.put("PARTICLES", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.PARTICLES);
+            map.put("VILLAGER_DATA", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.VILLAGER_DATA);
+            map.put("OPTIONAL_UNSIGNED_INT", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.OPTIONAL_INT);
+            map.put("POSE", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.ENTITY_POSE);
+            map.put("VECTOR3", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.VECTOR3F);
+            map.put("QUATERNION", com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.QUATERNION);
+
+            int syncedCount = 0;
+            for (Map.Entry<String, com.github.retrooper.packetevents.protocol.entity.data.EntityDataType<?>> entry : map.entrySet()) {
+                try {
+                    Field f = edsClass.getDeclaredField(entry.getKey());
+                    f.setAccessible(true);
+                    Object serializer = f.get(null);
+                    if (serializer != null) {
+                        int id = (Integer) getSerializedIdMethod.invoke(null, serializer);
+                        var data = entry.getValue().getRegistryData();
+                        if (data != null) {
+                            int[] ids = data.getData();
+                            if (ids != null && ids.length > 0) {
+                                ids[ids.length - 1] = id;
+                                syncedCount++;
+                            }
+                        }
+                    }
+                } catch (Throwable ignored) {}
+            }
+
+            if (logger != null && syncedCount > 0) {
+                logger.info("EntityDataSerializers sync completado (" + syncedCount + " tipos sincronizados, POSE="
+                    + com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.ENTITY_POSE.getId(com.github.retrooper.packetevents.protocol.player.ClientVersion.getLatest()) + ")");
             }
         } catch (Throwable ignored) {}
     }

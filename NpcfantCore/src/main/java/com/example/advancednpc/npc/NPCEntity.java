@@ -52,7 +52,7 @@ public class NPCEntity implements INPC {
         this.id         = id;
         this.name       = ChatColor.translateAlternateColorCodes('&', name);
         this.location   = location.clone();
-        this.type       = type != null ? type : NPCType.PLAYER;
+        this.type       = NPCType.PLAYER;
         this.fakePlayer = new FakePlayerNPC(id, this.name, location, plugin);
         this.fakePlayer.setNpcType(this.type);
         if (skin != null) {
@@ -100,7 +100,7 @@ public class NPCEntity implements INPC {
 
     public NPCType getType() { return type; }
     public void setType(NPCType t) {
-        this.type = t != null ? t : NPCType.PLAYER;
+        this.type = NPCType.PLAYER;
         fakePlayer.setNpcType(this.type);
     }
 

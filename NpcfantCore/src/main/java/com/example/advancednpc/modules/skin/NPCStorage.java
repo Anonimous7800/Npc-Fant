@@ -131,7 +131,6 @@ public class NPCStorage {
                 }
 
                 NPCType npcType = NPCType.PLAYER;
-                try { npcType = NPCType.valueOf(typeStr.toUpperCase()); } catch (Exception ignored) {}
 
                 NPCPose npcPose = NPCPose.STANDING;
                 try { npcPose = NPCPose.valueOf(poseStr.toUpperCase()); } catch (Exception ignored) {}

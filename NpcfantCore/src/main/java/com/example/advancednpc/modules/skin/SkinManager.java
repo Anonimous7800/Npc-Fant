@@ -22,30 +22,32 @@ import java.util.logging.Level;
 
 public class SkinManager {
 
-    private static final Map<String, List<String>> PRESET_FALLBACK_USERS = Map.of(
-        "steve",    List.of("MHF_Steve", "Steve", "Dinnerbone"),
-        "alex",     List.of("MHF_Alex", "Alex", "Grumm"),
-        "guard",    List.of("Technoblade", "Ph1LzA", "MHF_Golem"),
-        "guardia",  List.of("Technoblade", "Ph1LzA", "MHF_Golem"),
-        "merchant", List.of("GoodTimesWithScar", "Grian", "MHF_Villager"),
-        "mercader", List.of("GoodTimesWithScar", "Grian", "MHF_Villager"),
-        "warrior",  List.of("Notch", "Sapnap", "Illumina"),
-        "guerrero", List.of("Notch", "Sapnap", "Illumina"),
-        "mage",     List.of("jeb_", "Etho", "DanTDM"),
-        "mago",     List.of("jeb_", "Etho", "DanTDM")
+    private static final Map<String, List<String>> PRESET_FALLBACK_USERS = Map.ofEntries(
+        Map.entry("steve",    List.of("MHF_Steve", "Steve", "Dinnerbone")),
+        Map.entry("alex",     List.of("MHF_Alex", "Alex", "Grumm")),
+        Map.entry("guard",    List.of("Technoblade", "Ph1LzA", "Sapnap")),
+        Map.entry("guardia",  List.of("Technoblade", "Ph1LzA", "Sapnap")),
+        Map.entry("merchant", List.of("GoodTimesWithScar", "Grian", "CaptainSparklez")),
+        Map.entry("mercader", List.of("GoodTimesWithScar", "Grian", "CaptainSparklez")),
+        Map.entry("warrior",  List.of("Notch", "Sapnap", "Illumina")),
+        Map.entry("guerrero", List.of("Notch", "Sapnap", "Illumina")),
+        Map.entry("mage",     List.of("jeb_", "Etho", "DanTDM")),
+        Map.entry("mago",     List.of("jeb_", "Etho", "DanTDM")),
+        Map.entry("jugador",  List.of("MHF_Steve", "Steve", "Notch"))
     );
 
-    private static final Map<String, String> BUILTIN_PNG_TO_PRESET = Map.of(
-        "steve",    "steve",
-        "alex",     "alex",
-        "guardia",  "guard",
-        "guard",    "guard",
-        "mercader", "merchant",
-        "merchant", "merchant",
-        "guerrero", "warrior",
-        "warrior",  "warrior",
-        "mago",     "mage",
-        "mage",     "mage"
+    private static final Map<String, String> BUILTIN_PNG_TO_PRESET = Map.ofEntries(
+        Map.entry("steve",    "steve"),
+        Map.entry("alex",     "alex"),
+        Map.entry("jugador",  "steve"),
+        Map.entry("guardia",  "guard"),
+        Map.entry("guard",    "guard"),
+        Map.entry("mercader", "merchant"),
+        Map.entry("merchant", "merchant"),
+        Map.entry("guerrero", "warrior"),
+        Map.entry("warrior",  "warrior"),
+        Map.entry("mago",     "mage"),
+        Map.entry("mage",     "mage")
     );
 
     private final Plugin               plugin;

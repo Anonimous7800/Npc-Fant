@@ -11,6 +11,8 @@ public class ConfigManager {
     private static final String[] DEFAULT_PNG_SKINS = {
         "skins/steve.png",
         "skins/alex.png",
+        "skins/jugador.png",
+        "skins/custom/jugador.png",
         "skins/custom/guerrero.png",
         "skins/custom/mago.png",
         "skins/custom/guardia.png",

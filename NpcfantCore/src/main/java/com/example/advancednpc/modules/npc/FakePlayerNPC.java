@@ -449,68 +449,7 @@ public class FakePlayerNPC {
     }
 
     private EntityType resolveEntityType(NPCType type) {
-        if (type == null || type == NPCType.PLAYER) return EntityTypes.PLAYER;
-        return switch (type) {
-            case VILLAGER         -> EntityTypes.VILLAGER;
-            case WANDERING_TRADER -> EntityTypes.WANDERING_TRADER;
-            case COW              -> EntityTypes.COW;
-            case PIG              -> EntityTypes.PIG;
-            case SHEEP            -> EntityTypes.SHEEP;
-            case CHICKEN          -> EntityTypes.CHICKEN;
-            case HORSE            -> EntityTypes.HORSE;
-            case DONKEY           -> EntityTypes.DONKEY;
-            case MULE             -> EntityTypes.MULE;
-            case LLAMA            -> EntityTypes.LLAMA;
-            case CAT              -> EntityTypes.CAT;
-            case DOG, WOLF        -> EntityTypes.WOLF;
-            case RABBIT           -> EntityTypes.RABBIT;
-            case TURTLE           -> EntityTypes.TURTLE;
-            case AXOLOTL          -> EntityTypes.AXOLOTL;
-            case FROG             -> EntityTypes.FROG;
-            case SNIFFER          -> EntityTypes.SNIFFER;
-            case ALLAY            -> EntityTypes.ALLAY;
-            case POLAR_BEAR       -> EntityTypes.POLAR_BEAR;
-            case BEE              -> EntityTypes.BEE;
-            case GOAT             -> EntityTypes.GOAT;
-            case PANDA            -> EntityTypes.PANDA;
-            case FOX              -> EntityTypes.FOX;
-            case IRON_GOLEM       -> EntityTypes.IRON_GOLEM;
-            case SNOWMAN          -> EntityTypes.SNOW_GOLEM;
-            case ZOMBIE           -> EntityTypes.ZOMBIE;
-            case SKELETON         -> EntityTypes.SKELETON;
-            case CREEPER          -> EntityTypes.CREEPER;
-            case SPIDER           -> EntityTypes.SPIDER;
-            case ENDERMAN         -> EntityTypes.ENDERMAN;
-            case WITCH            -> EntityTypes.WITCH;
-            case PILLAGER         -> EntityTypes.PILLAGER;
-            case VINDICATOR       -> EntityTypes.VINDICATOR;
-            case EVOKER           -> EntityTypes.EVOKER;
-            case PHANTOM          -> EntityTypes.PHANTOM;
-            case DROWNED          -> EntityTypes.DROWNED;
-            case HUSK             -> EntityTypes.HUSK;
-            case STRAY            -> EntityTypes.STRAY;
-            case WARDEN           -> EntityTypes.WARDEN;
-            case BREEZE           -> EntityTypes.BREEZE;
-            case ENDER_DRAGON     -> EntityTypes.ENDER_DRAGON;
-            case WITHER           -> EntityTypes.WITHER;
-            case ELDER_GUARDIAN   -> EntityTypes.ELDER_GUARDIAN;
-            case BLAZE            -> EntityTypes.BLAZE;
-            case GHAST            -> EntityTypes.GHAST;
-            case MAGMA_CUBE       -> EntityTypes.MAGMA_CUBE;
-            case PIGLIN           -> EntityTypes.PIGLIN;
-            case PIGLIN_BRUTE     -> EntityTypes.PIGLIN_BRUTE;
-            case ZOMBIFIED_PIGLIN -> EntityTypes.ZOMBIFIED_PIGLIN;
-            case STRIDER          -> EntityTypes.STRIDER;
-            case HOGLIN           -> EntityTypes.HOGLIN;
-            case ZOGLIN           -> EntityTypes.ZOGLIN;
-            case SQUID            -> EntityTypes.SQUID;
-            case GLOW_SQUID       -> EntityTypes.GLOW_SQUID;
-            case FISH_COD         -> EntityTypes.COD;
-            case FISH_SALMON      -> EntityTypes.SALMON;
-            case DOLPHIN          -> EntityTypes.DOLPHIN;
-            case GUARDIAN         -> EntityTypes.GUARDIAN;
-            default               -> EntityTypes.PLAYER;
-        };
+        return EntityTypes.PLAYER;
     }
 
     private void sendRemoveFromTabList(Player player, UUID targetProfileUuid) {
@@ -536,7 +475,7 @@ public class FakePlayerNPC {
 
     public NPCType getNpcType() { return npcType; }
     public void setNpcType(NPCType type) {
-        this.npcType = type != null ? type : NPCType.PLAYER;
+        this.npcType = NPCType.PLAYER;
         if (!spawnedFor.isEmpty()) {
             respawnForAll();
         }
