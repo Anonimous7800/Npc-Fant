@@ -11,16 +11,19 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class NPCEditorGUI implements Listener {
 
@@ -30,6 +33,7 @@ public class NPCEditorGUI implements Listener {
     private final AdvancedNPCPlugin plugin;
     private final NamespacedKey keyAction;
     private final Map<UUID, UUID> editingNpcMap = new HashMap<>();
+    private final Map<UUID, UUID> pendingNameChat = new ConcurrentHashMap<>();
 
     public NPCEditorGUI(AdvancedNPCPlugin plugin) {
         this.plugin = plugin;
@@ -66,6 +70,20 @@ public class NPCEditorGUI implements Listener {
             )
         ));
 
+        inv.setItem(11, makeItem(
+            Material.NAME_TAG,
+            "§b§lCambiar Nombre y Color",
+            "name",
+            Arrays.asList(
+                "§7Nombre actual: §f" + npc.getName(),
+                "",
+                "§eClic Izquierdo: §7Escribir nuevo texto en el chat",
+                "§eClic Derecho: §7Paleta de colores del nombre",
+                "",
+                "§8Soporta códigos '&' (ej: &6&lRey &bNPC)"
+            )
+        ));
+
         inv.setItem(12, makeItem(
             Material.PLAYER_HEAD,
             "§b§lCambiar Skin",
@@ -74,6 +92,19 @@ public class NPCEditorGUI implements Listener {
                 "§7Skin personalizada o del catálogo.",
                 "",
                 "§eClic para abrir el catálogo de skins (.png)"
+            )
+        ));
+
+        inv.setItem(13, makeItem(
+            Material.FEATHER,
+            "§d§lAnimaciones y Gestos",
+            "animations",
+            Arrays.asList(
+                "§7Configura gestos interactivos y auto-saludo.",
+                "",
+                "§fAuto-saludo al acercarse: " + (npc.isAutoWave() ? "§aActivado" : "§cDesactivado"),
+                "",
+                "§eClic para abrir el menú de animaciones"
             )
         ));
 
@@ -226,6 +257,27 @@ public class NPCEditorGUI implements Listener {
                 plugin.getNPCPoseGUI().openGUI(player, npc);
             }
 
+            case "name" -> {
+                if (event.isRightClick()) {
+                    player.closeInventory();
+                    plugin.getNPCNameColorGUI().openGUI(player, npc);
+                } else {
+                    pendingNameChat.put(player.getUniqueId(), npc.getId());
+                    player.closeInventory();
+                    player.sendMessage("§8━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+                    player.sendMessage("§6§l✦ NpcFant — Cambiar Nombre del NPC");
+                    player.sendMessage("§7Escribe el nuevo nombre para el NPC en el chat.");
+                    player.sendMessage("§7Puedes usar códigos de color como §a&a§7, §b&b§7, §e&e§7, §l&l (negrita)§7, etc.");
+                    player.sendMessage("§7Escribe §ccancel §7para cancelar.");
+                    player.sendMessage("§8━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+                }
+            }
+
+            case "animations" -> {
+                player.closeInventory();
+                plugin.getNPCAnimationGUI().openGUI(player, npc);
+            }
+
             case "skin" -> {
                 player.closeInventory();
                 plugin.getSkinMenuGUI().openMenu(player, 0);
@@ -311,6 +363,40 @@ public class NPCEditorGUI implements Listener {
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
         editingNpcMap.remove(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onChat(AsyncPlayerChatEvent event) {
+        Player player = event.getPlayer();
+        UUID npcId = pendingNameChat.remove(player.getUniqueId());
+        if (npcId == null) return;
+
+        event.setCancelled(true);
+        String msg = event.getMessage().trim();
+        if (msg.equalsIgnoreCase("cancel")) {
+            player.sendMessage("§c[NpcFant] Cambio de nombre cancelado.");
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                NPCEntity npc = (NPCEntity) plugin.getNpcManager().getNPC(npcId);
+                if (npc != null) openEditor(player, npc);
+            });
+            return;
+        }
+
+        String colored = ChatColor.translateAlternateColorCodes('&', msg);
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            NPCManager nm = plugin.getNpcManager();
+            NPCEntity npc = (NPCEntity) nm.getNPC(npcId);
+            if (npc == null) {
+                player.sendMessage("§c[NpcFant] El NPC ya no existe.");
+                return;
+            }
+            npc.setName(colored);
+            nm.syncHologram(npc);
+            npc.getFakePlayer().setName(colored);
+            nm.saveNPC(npc);
+            player.sendMessage("§a[NpcFant] ¡Nombre actualizado a: " + colored + "§a!");
+            openEditor(player, npc);
+        });
     }
 
     private ItemStack makeItem(Material material, String name, String action, List<String> lore) {

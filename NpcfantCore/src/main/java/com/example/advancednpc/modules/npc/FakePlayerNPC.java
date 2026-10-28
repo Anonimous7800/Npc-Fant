@@ -41,6 +41,7 @@ public class FakePlayerNPC {
     public static final String STEVE_SIGNATURE = "";
 
     private final int          entityId;
+    private final int          seatEntityId;
     private final UUID         uuid;
     private volatile UUID      profileUuid;
     private       String       name;
@@ -58,16 +59,18 @@ public class FakePlayerNPC {
 
     private final Set<UUID> spawnedFor     = ConcurrentHashMap.newKeySet();
     private final Set<UUID> teamCreatedFor = ConcurrentHashMap.newKeySet();
+    private final Set<UUID> seatSpawnedFor = ConcurrentHashMap.newKeySet();
     private final Map<UUID, float[]> lastLookAngles = new ConcurrentHashMap<>();
 
     public FakePlayerNPC(UUID uuid, String name, Location location, Plugin plugin) {
-        this.uuid        = uuid;
-        this.profileUuid = uuid;
-        this.name        = HologramLine.colorize(name);
-        this.location    = location.clone();
-        this.plugin      = plugin;
-        this.entityId    = NEXT_ENTITY_ID.getAndIncrement();
-        this.skinData    = new SkinData(STEVE_VALUE, STEVE_SIGNATURE);
+        this.uuid         = uuid;
+        this.profileUuid  = uuid;
+        this.name         = HologramLine.colorize(name);
+        this.location     = location.clone();
+        this.plugin       = plugin;
+        this.entityId     = NEXT_ENTITY_ID.getAndIncrement();
+        this.seatEntityId = NEXT_ENTITY_ID.getAndIncrement();
+        this.skinData     = new SkinData(STEVE_VALUE, STEVE_SIGNATURE);
     }
 
     public void spawnForAll() {
@@ -101,6 +104,9 @@ public class FakePlayerNPC {
                         sendRotationPackets(player, location.getYaw(), location.getPitch());
                         sendMetadataPacket(player);
                         sendEquipmentPackets(player);
+                        if (pose == NPCPose.SITTING) {
+                            spawnSeatForPlayer(player);
+                        }
 
                         ServerVersion ver = PacketEvents.getAPI().getServerManager().getVersion();
                         if (ver.isOlderThan(ServerVersion.V_1_19_3)) {
@@ -121,6 +127,9 @@ public class FakePlayerNPC {
                 sendRotationPackets(player, location.getYaw(), location.getPitch());
                 sendMetadataPacket(player);
                 sendEquipmentPackets(player);
+                if (pose == NPCPose.SITTING) {
+                    spawnSeatForPlayer(player);
+                }
             }
 
         } catch (Exception e) {
@@ -138,6 +147,7 @@ public class FakePlayerNPC {
             }
         }
         spawnedFor.clear();
+        seatSpawnedFor.clear();
     }
 
     public void despawnForPlayer(Player player) {
@@ -146,6 +156,7 @@ public class FakePlayerNPC {
 
     private void despawnForPlayerInternal(Player player, UUID targetProfileUuid) {
         if (player == null) return;
+        despawnSeatForPlayer(player);
         if (!spawnedFor.remove(player.getUniqueId())) return;
         try {
             WrapperPlayServerDestroyEntities destroyPacket =
@@ -162,6 +173,7 @@ public class FakePlayerNPC {
     public void removePlayerFromTracking(UUID playerId) {
         spawnedFor.remove(playerId);
         teamCreatedFor.remove(playerId);
+        seatSpawnedFor.remove(playerId);
         lastLookAngles.remove(playerId);
     }
 
@@ -224,6 +236,40 @@ public class FakePlayerNPC {
         playAnimation(WrapperPlayServerEntityAnimation.EntityAnimationType.SWING_MAIN_ARM);
     }
 
+    public void swingOffHand() {
+        playAnimation(WrapperPlayServerEntityAnimation.EntityAnimationType.SWING_OFF_HAND);
+    }
+
+    public void hurtAnimation() {
+        playAnimation(WrapperPlayServerEntityAnimation.EntityAnimationType.HURT);
+    }
+
+    public void bow() {
+        setPose(NPCPose.SNEAKING);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            setPose(NPCPose.STANDING);
+        }, 15L);
+    }
+
+    public void playHappyParticles() {
+        if (location.getWorld() == null) return;
+        try {
+            org.bukkit.Particle p;
+            try {
+                p = org.bukkit.Particle.valueOf("HAPPY_VILLAGER");
+            } catch (Exception e) {
+                p = org.bukkit.Particle.valueOf("VILLAGER_HAPPY");
+            }
+            location.getWorld().spawnParticle(
+                p,
+                location.clone().add(0, 1.8, 0),
+                10,
+                0.3, 0.3, 0.3,
+                0.05
+            );
+        } catch (Exception ignored) {}
+    }
+
     public void playAnimation(WrapperPlayServerEntityAnimation.EntityAnimationType animationType) {
         for (UUID uid : new HashSet<>(spawnedFor)) {
             Player p = Bukkit.getPlayer(uid);
@@ -259,8 +305,11 @@ public class FakePlayerNPC {
         double   dz   = tEye.getZ() - eye.getZ();
         double   dist = Math.sqrt(dx * dx + dz * dz);
         float    yaw   = (float)(Math.toDegrees(Math.atan2(-dx, dz)));
-        if (yaw < 0) yaw += 360f;
+        while (yaw > 180f) yaw -= 360f;
+        while (yaw < -180f) yaw += 360f;
         float    pitch = (float)(-Math.toDegrees(Math.atan2(dy, dist)));
+        if (pitch < -90f) pitch = -90f;
+        if (pitch > 90f)  pitch = 90f;
 
         sendRotationPackets(target, yaw, pitch);
     }
@@ -275,12 +324,63 @@ public class FakePlayerNPC {
         lastLookAngles.put(uid, new float[]{yaw, pitch});
 
         try {
-            WrapperPlayServerEntityHeadLook headLookPacket =
-                new WrapperPlayServerEntityHeadLook(entityId, yaw);
+            if (this.pose == NPCPose.SITTING) {
+                WrapperPlayServerEntityRotation seatRot =
+                    new WrapperPlayServerEntityRotation(seatEntityId, yaw, 0f, true);
+                PacketEvents.getAPI().getPlayerManager().sendPacket(player, seatRot);
+                WrapperPlayServerEntityHeadLook seatHead =
+                    new WrapperPlayServerEntityHeadLook(seatEntityId, yaw);
+                PacketEvents.getAPI().getPlayerManager().sendPacket(player, seatHead);
+            } else {
+                WrapperPlayServerEntityTeleport tpPacket =
+                    new WrapperPlayServerEntityTeleport(entityId, new Vector3d(location.getX(), location.getY(), location.getZ()), yaw, pitch, true);
+                PacketEvents.getAPI().getPlayerManager().sendPacket(player, tpPacket);
+            }
             WrapperPlayServerEntityRotation rotPacket =
                 new WrapperPlayServerEntityRotation(entityId, yaw, pitch, true);
-            PacketEvents.getAPI().getPlayerManager().sendPacket(player, headLookPacket);
+            WrapperPlayServerEntityHeadLook headLookPacket =
+                new WrapperPlayServerEntityHeadLook(entityId, yaw);
             PacketEvents.getAPI().getPlayerManager().sendPacket(player, rotPacket);
+            PacketEvents.getAPI().getPlayerManager().sendPacket(player, headLookPacket);
+        } catch (Exception ignored) {}
+    }
+
+    private void spawnSeatForPlayer(Player player) {
+        if (player == null || !player.isOnline()) return;
+        if (!seatSpawnedFor.add(player.getUniqueId())) return;
+        try {
+            WrapperPlayServerSpawnEntity spawnSeat = new WrapperPlayServerSpawnEntity(
+                seatEntityId,
+                Optional.of(UUID.randomUUID()),
+                EntityTypes.ARMOR_STAND,
+                new Vector3d(location.getX(), location.getY() - 0.55, location.getZ()),
+                0f,
+                location.getYaw(),
+                location.getYaw(),
+                0,
+                Optional.empty()
+            );
+            PacketEvents.getAPI().getPlayerManager().sendPacket(player, spawnSeat);
+
+            List<EntityData<?>> seatMeta = new ArrayList<>();
+            seatMeta.add(new EntityData<>(0, EntityDataTypes.BYTE, (byte) 0x20));
+            seatMeta.add(new EntityData<>(15, EntityDataTypes.BYTE, (byte) 0x10));
+            WrapperPlayServerEntityMetadata metaSeatPacket = new WrapperPlayServerEntityMetadata(seatEntityId, seatMeta);
+            PacketEvents.getAPI().getPlayerManager().sendPacket(player, metaSeatPacket);
+
+            WrapperPlayServerSetPassengers mountPacket =
+                new WrapperPlayServerSetPassengers(seatEntityId, new int[]{ entityId });
+            PacketEvents.getAPI().getPlayerManager().sendPacket(player, mountPacket);
+        } catch (Exception ignored) {}
+    }
+
+    private void despawnSeatForPlayer(Player player) {
+        if (player == null) return;
+        if (!seatSpawnedFor.remove(player.getUniqueId())) return;
+        try {
+            WrapperPlayServerDestroyEntities destroy =
+                new WrapperPlayServerDestroyEntities(seatEntityId);
+            PacketEvents.getAPI().getPlayerManager().sendPacket(player, destroy);
         } catch (Exception ignored) {}
     }
 
@@ -441,7 +541,7 @@ public class FakePlayerNPC {
                 case SWIMMING    -> EntityPose.SWIMMING;
                 case SPIN_ATTACK -> EntityPose.SPIN_ATTACK;
                 case DYING       -> EntityPose.DYING;
-                case SITTING     -> EntityPose.SITTING;
+                case SITTING     -> EntityPose.STANDING;
                 default          -> EntityPose.STANDING;
             };
             baseMetadata.add(new EntityData<>(6, EntityDataTypes.ENTITY_POSE, pePose));
@@ -525,9 +625,26 @@ public class FakePlayerNPC {
     }
 
     public NPCPose getPose() { return pose; }
-    public void setPose(NPCPose pose) {
-        this.pose = pose != null ? pose : NPCPose.STANDING;
+    public void setPose(NPCPose newPose) {
+        NPCPose prevPose = this.pose;
+        this.pose = newPose != null ? newPose : NPCPose.STANDING;
+        if (prevPose == NPCPose.SITTING && this.pose != NPCPose.SITTING) {
+            for (UUID uid : new HashSet<>(spawnedFor)) {
+                Player p = Bukkit.getPlayer(uid);
+                if (p != null && p.isOnline()) {
+                    despawnSeatForPlayer(p);
+                }
+            }
+        }
         updateMetadataForAll();
+        if (this.pose == NPCPose.SITTING) {
+            for (UUID uid : new HashSet<>(spawnedFor)) {
+                Player p = Bukkit.getPlayer(uid);
+                if (p != null && p.isOnline()) {
+                    spawnSeatForPlayer(p);
+                }
+            }
+        }
     }
 
     public NPCEquipment getEquipment() { return equipment; }

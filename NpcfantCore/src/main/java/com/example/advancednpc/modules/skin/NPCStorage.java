@@ -51,6 +51,7 @@ public class NPCStorage {
             cfg.set(path + ".glow-color",     npc.getGlowColor()     != null ? npc.getGlowColor()     : "");
             cfg.set(path + ".invisible",      npc.isInvisible());
             cfg.set(path + ".look-at-player", npc.isLookAtPlayer());
+            cfg.set(path + ".auto-wave",      npc.isAutoWave());
             cfg.set(path + ".visible-to-all", npc.isVisibleToAll());
             cfg.set(path + ".hologram-lines", npc.getHologramLines());
 
@@ -145,6 +146,7 @@ public class NPCStorage {
                 }
                 entity.setInvisible(invis);
                 entity.setLookAtPlayer(lookAt);
+                entity.setAutoWave(cfg.getBoolean(path + ".auto-wave", false));
                 entity.setVisibleToAll(visAll);
                 entity.setHologramLines(holoLines);
 

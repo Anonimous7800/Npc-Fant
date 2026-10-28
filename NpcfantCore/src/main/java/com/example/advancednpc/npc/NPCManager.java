@@ -54,6 +54,7 @@ public class NPCManager implements INPCManager, Listener {
     private final Map<UUID, NPCEntity> npcs = new LinkedHashMap<>();
     private final Map<Integer, NPCEntity> entityIdMap = new ConcurrentHashMap<>();
     private final Map<UUID, Long> lastInteractDebounce = new ConcurrentHashMap<>();
+    private final Map<UUID, Set<UUID>> autoWavedPlayers = new ConcurrentHashMap<>();
 
     public NPCManager(JavaPlugin plugin, HologramManager hologramManager,
                       CooldownManager cooldownManager) {
@@ -176,6 +177,19 @@ public class NPCManager implements INPCManager, Listener {
                         }
                         if (npc.isLookAtPlayer() && distSq <= LOOK_AT_DISTANCE_SQ) {
                             npc.lookAtPlayer(player);
+                        }
+                        if (npc.isAutoWave()) {
+                            if (distSq <= 20.25) {
+                                Set<UUID> waved = autoWavedPlayers.computeIfAbsent(npc.getId(), k -> ConcurrentHashMap.newKeySet());
+                                if (waved.add(pid)) {
+                                    npc.getFakePlayer().swingMainArm();
+                                }
+                            } else if (distSq > 49.0) {
+                                Set<UUID> waved = autoWavedPlayers.get(npc.getId());
+                                if (waved != null) {
+                                    waved.remove(pid);
+                                }
+                            }
                         }
                     }
                 }

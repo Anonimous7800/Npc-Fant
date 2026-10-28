@@ -153,6 +153,10 @@ public class NPCEntity implements INPC {
     public boolean isLookAtPlayer() { return lookAtPlayer; }
     public void setLookAtPlayer(boolean v) { this.lookAtPlayer = v; }
 
+    private boolean autoWave = false;
+    public boolean isAutoWave() { return autoWave; }
+    public void setAutoWave(boolean autoWave) { this.autoWave = autoWave; }
+
     public boolean isVisibleToAll() { return visibleToAll; }
     public void setVisibleToAll(boolean v) { this.visibleToAll = v; }
 
