@@ -189,7 +189,7 @@ public class NPCEditorGUI implements Listener {
             Arrays.asList(
                 "§4¡Atención! Esta acción no se puede deshacer.",
                 "",
-                "§cShift + Clic para confirmar eliminación"
+                "§eClic para eliminar este NPC definitivamente."
             )
         ));
 
@@ -331,13 +331,10 @@ public class NPCEditorGUI implements Listener {
             }
 
             case "delete" -> {
-                if (event.getClick() == ClickType.SHIFT_LEFT || event.getClick() == ClickType.SHIFT_RIGHT) {
-                    nm.removeNPC(npc.getId());
-                    player.sendMessage("§c[NpcFant] NPC '" + npc.getName() + "' eliminado correctamente.");
-                    player.closeInventory();
-                } else {
-                    player.sendMessage("§e[NpcFant] Para eliminar el NPC, mantén presionado §cSHIFT + Clic§e.");
-                }
+                editingNpcMap.remove(player.getUniqueId());
+                player.closeInventory();
+                nm.removeNPC(npc.getId());
+                player.sendMessage("§c[NpcFant] NPC '" + npc.getName() + "' eliminado correctamente.");
             }
         }
     }

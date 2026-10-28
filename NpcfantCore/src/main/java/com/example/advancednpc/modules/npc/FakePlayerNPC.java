@@ -140,14 +140,20 @@ public class FakePlayerNPC {
 
     public void despawnForAll() {
         UUID oldProfileUuid = this.profileUuid;
-        for (UUID uid : new HashSet<>(spawnedFor)) {
-            Player p = Bukkit.getPlayer(uid);
-            if (p != null && p.isOnline()) {
-                despawnForPlayerInternal(p, oldProfileUuid);
-            }
+        WrapperPlayServerDestroyEntities destroyPacket =
+            new WrapperPlayServerDestroyEntities(entityId, seatEntityId);
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            try {
+                PacketEvents.getAPI().getPlayerManager().sendPacket(p, destroyPacket);
+                if (npcType == NPCType.PLAYER) {
+                    sendRemoveFromTabList(p, oldProfileUuid);
+                }
+            } catch (Exception ignored) {}
         }
         spawnedFor.clear();
         seatSpawnedFor.clear();
+        teamCreatedFor.clear();
+        lastLookAngles.clear();
     }
 
     public void despawnForPlayer(Player player) {
@@ -392,7 +398,7 @@ public class FakePlayerNPC {
                 seatEntityId,
                 Optional.of(UUID.randomUUID()),
                 EntityTypes.ARMOR_STAND,
-                new Vector3d(location.getX(), location.getY() - 0.55, location.getZ()),
+                new Vector3d(location.getX(), location.getY() + 0.30, location.getZ()),
                 0f,
                 location.getYaw(),
                 location.getYaw(),
@@ -668,21 +674,18 @@ public class FakePlayerNPC {
         NPCPose prevPose = this.pose;
         this.pose = newPose != null ? newPose : NPCPose.STANDING;
         if (prevPose == NPCPose.SITTING && this.pose != NPCPose.SITTING) {
-            for (UUID uid : new HashSet<>(spawnedFor)) {
+            for (UUID uid : new HashSet<>(seatSpawnedFor)) {
                 Player p = Bukkit.getPlayer(uid);
                 if (p != null && p.isOnline()) {
                     despawnSeatForPlayer(p);
                 }
             }
+            seatSpawnedFor.clear();
         }
-        updateMetadataForAll();
-        if (this.pose == NPCPose.SITTING) {
-            for (UUID uid : new HashSet<>(spawnedFor)) {
-                Player p = Bukkit.getPlayer(uid);
-                if (p != null && p.isOnline()) {
-                    spawnSeatForPlayer(p);
-                }
-            }
+        if (!spawnedFor.isEmpty()) {
+            respawnForAll();
+        } else {
+            updateMetadataForAll();
         }
     }
 
