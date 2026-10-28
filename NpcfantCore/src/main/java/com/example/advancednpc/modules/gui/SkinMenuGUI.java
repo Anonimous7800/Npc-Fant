@@ -99,6 +99,7 @@ public class SkinMenuGUI implements Listener {
             player.sendMessage(ChatColor.RED + "[NpcFant] SkinManager no disponible.");
             return;
         }
+        skinManager.reload();
 
 
         List<Map.Entry<String, SkinData>> allSkins = new ArrayList<>();
@@ -154,10 +155,11 @@ public class SkinMenuGUI implements Listener {
         ItemStack userBtn = new ItemStack(Material.NAME_TAG);
         ItemMeta  userMeta = userBtn.getItemMeta();
         if (userMeta != null) {
-            userMeta.setDisplayName(ChatColor.YELLOW + "✎ Skin por Jugador");
+            userMeta.setDisplayName(ChatColor.YELLOW + "✎ Importar Skin .PNG");
             userMeta.setLore(Arrays.asList(
-                ChatColor.GRAY + "Usa: /npcfant skin <uuid>",
-                ChatColor.GRAY + "username <nombreDejugador>"
+                ChatColor.GRAY + "Coloca tus archivos .png en:",
+                ChatColor.AQUA + "plugins/NpcFant/skins/custom/",
+                ChatColor.GRAY + "o usa: /npcfant skin <npc> <skin.png>"
             ));
             userBtn.setItemMeta(userMeta);
         }
@@ -349,14 +351,13 @@ public class SkinMenuGUI implements Listener {
         if (meta == null) return item;
 
         String badge = type.equals("preset") ? ChatColor.AQUA + "[Predefinida]"
-                                             : ChatColor.LIGHT_PURPLE + "[Local]";
+                                             : ChatColor.LIGHT_PURPLE + "[PNG Local]";
         meta.setDisplayName(ChatColor.WHITE + displayName);
         meta.setLore(Arrays.asList(
             badge,
             ChatColor.GRAY + "Clic para aplicar al NPC más cercano",
             "",
-            ChatColor.DARK_GRAY + "Tipo: " + type,
-            ChatColor.DARK_GRAY + "Clave: " + key
+            ChatColor.DARK_GRAY + "Archivo: " + (type.equals("preset") ? key : key + ".png")
         ));
 
         meta.getPersistentDataContainer().set(keySkinKey,  PersistentDataType.STRING, key);

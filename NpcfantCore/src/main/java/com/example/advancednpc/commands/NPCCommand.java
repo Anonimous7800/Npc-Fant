@@ -43,7 +43,7 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUB_COMMANDS = Arrays.asList(
         "create", "remove", "clone", "move", "tp",
-        "skin", "name", "hologram", "pose", "equip",
+        "skin", "setskin", "name", "hologram", "pose", "equip",
         "glow", "invisible", "action", "visible", "reload",
         "list", "info", "copy", "look", "animate", "nametag"
     );
@@ -148,9 +148,10 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
                 break;
             }
 
-            case "skin": {
-                if (args.length < 4) {
-                    player.sendMessage(getPrefix() + ChatColor.RED + "Uso: /npcfant skin <uuid|nombre|nearest> <preset|file|username> <valor>");
+            case "skin":
+            case "setskin": {
+                if (args.length < 3) {
+                    player.sendMessage(getPrefix() + ChatColor.RED + "Uso: /npcfant skin <npc> <archivo.png|jugador> o /npcfant skin <npc> <png|file|username|preset> <valor>");
                     return true;
                 }
                 Optional<NPCEntity> target = npcManager.resolveNPC(args[1], player);
@@ -158,9 +159,22 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
                     player.sendMessage(getPrefix() + ChatColor.RED + "NPC no encontrado.");
                     return true;
                 }
-                String skinType = args[2].toLowerCase();
-                String input = args[3];
-                player.sendMessage(getPrefix() + ChatColor.YELLOW + "Buscando y aplicando skin...");
+                plugin.getSkinManager().reload();
+                String skinType;
+                String input;
+                if (args.length == 3) {
+                    input = args[2];
+                    if (input.toLowerCase().endsWith(".png") || plugin.getSkinManager().hasLocalPng(input)) {
+                        skinType = "file";
+                    } else {
+                        skinType = "auto";
+                    }
+                } else {
+                    skinType = args[2].toLowerCase();
+                    if (skinType.equals("png")) skinType = "file";
+                    input = args[3];
+                }
+                player.sendMessage(getPrefix() + ChatColor.YELLOW + "Importando y aplicando skin '" + input + "'...");
                 npcManager.applySkinAsync(target.get().getId(), skinType, input, player);
                 break;
             }
@@ -722,7 +736,13 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
                 case "pose":
                     return Arrays.asList("standing", "sneaking", "sitting", "sleeping", "swimming");
                 case "skin":
-                    return Arrays.asList("username", "file", "preset");
+                case "setskin": {
+                    List<String> opts = new ArrayList<>(Arrays.asList("png", "file", "username", "preset"));
+                    plugin.getSkinManager().getLocalPngFiles().keySet().forEach(k -> opts.add(k + ".png"));
+                    return opts.stream()
+                        .filter(s -> s.toLowerCase().startsWith(args[2].toLowerCase()))
+                        .collect(Collectors.toList());
+                }
                 case "hologram":
                 case "holo":
                     return Arrays.asList("add", "set", "insert", "removeline", "clear", "list");
@@ -741,16 +761,19 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
         if (args.length == 4 && sub.equals("action") && args[2].equalsIgnoreCase("add")) {
             return Arrays.asList("cmd", "console", "opcmd", "message", "sound", "server");
         }
-        if (args.length == 4 && sub.equals("skin")) {
+        if (args.length == 4 && (sub.equals("skin") || sub.equals("setskin"))) {
             String skinMode = args[2].toLowerCase();
             if (skinMode.equals("preset")) {
                 return new ArrayList<>(plugin.getSkinManager().getPresetSkins().keySet());
-            } else if (skinMode.equals("file")) {
+            } else if (skinMode.equals("file") || skinMode.equals("png")) {
                 List<String> files = new ArrayList<>();
-                plugin.getSkinManager().getAllDisplayNames().keySet().forEach(k -> {
-                    if (k.startsWith("file:")) files.add(k.substring(5));
+                plugin.getSkinManager().getLocalPngFiles().keySet().forEach(k -> {
+                    files.add(k + ".png");
+                    files.add(k);
                 });
-                return files;
+                return files.stream()
+                    .filter(s -> s.toLowerCase().startsWith(args[3].toLowerCase()))
+                    .collect(Collectors.toList());
             } else if (skinMode.equals("username")) {
                 return Bukkit.getOnlinePlayers().stream().map(Player::getName).collect(Collectors.toList());
             }
