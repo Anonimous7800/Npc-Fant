@@ -8,7 +8,6 @@ import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
 import com.github.retrooper.packetevents.util.Vector3d;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerDestroyEntities;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
-import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityTeleport;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSpawnEntity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -105,25 +104,7 @@ public class Hologram implements IHologram {
     @Override
     public void move(Location location) {
         this.baseLocation = location.clone();
-        int totalLines = lines.size();
-        for (UUID uid : new HashSet<>(spawnedFor)) {
-            Player p = Bukkit.getPlayer(uid);
-            if (p == null || !p.isOnline()) continue;
-            if (baseLocation.getWorld() == null || !p.getWorld().equals(baseLocation.getWorld())) {
-                despawnForPlayer(p);
-                continue;
-            }
-            for (int i = 0; i < totalLines && i < lineIds.size(); i++) {
-                double yOffset = (totalLines - 1 - i) * LINE_HEIGHT;
-                Location lineLoc = baseLocation.clone().add(0, yOffset, 0);
-                WrapperPlayServerEntityTeleport tp = new WrapperPlayServerEntityTeleport(
-                    lineIds.get(i),
-                    new Vector3d(lineLoc.getX(), lineLoc.getY(), lineLoc.getZ()),
-                    0f, 0f, false
-                );
-                PacketEvents.getAPI().getPlayerManager().sendPacket(p, tp);
-            }
-        }
+        scheduleRefresh();
     }
 
     @Override

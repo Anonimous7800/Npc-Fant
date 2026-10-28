@@ -240,22 +240,9 @@ public class FakePlayerNPC {
         for (UUID uid : new HashSet<>(spawnedFor)) {
             Player p = Bukkit.getPlayer(uid);
             if (p == null || !p.isOnline()) continue;
-            if (!p.getWorld().equals(newLocation.getWorld())) {
-                despawnForPlayer(p);
-                continue;
-            }
-            try {
-                WrapperPlayServerEntityTeleport teleportPacket = new WrapperPlayServerEntityTeleport(
-                    entityId,
-                    new Vector3d(newLocation.getX(), newLocation.getY(), newLocation.getZ()),
-                    newLocation.getYaw(),
-                    newLocation.getPitch(),
-                    true
-                );
-                PacketEvents.getAPI().getPlayerManager().sendPacket(p, teleportPacket);
-                sendRotationPackets(p, newLocation.getYaw(), newLocation.getPitch());
-            } catch (Exception e) {
-                plugin.getLogger().warning("[NpcFant] Error al teletransportar NPC: " + e.getMessage());
+            despawnForPlayer(p);
+            if (newLocation.getWorld() != null && p.getWorld().equals(newLocation.getWorld())) {
+                spawnForPlayer(p);
             }
         }
     }

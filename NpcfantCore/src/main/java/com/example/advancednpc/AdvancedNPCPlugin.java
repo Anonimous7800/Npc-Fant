@@ -37,6 +37,7 @@ public class AdvancedNPCPlugin extends JavaPlugin {
     private SkinManager        skinManager;
     private SkinMenuGUI        skinMenuGUI;
     private NPCEditorGUI       npcEditorGUI;
+    private com.example.advancednpc.modules.gui.NPCActionGUI npcActionGUI;
     private NPCStorage         npcStorage;
 
     @Override
@@ -121,6 +122,7 @@ public class AdvancedNPCPlugin extends JavaPlugin {
         this.dialogueManager = new DialogueManager(this);
         this.skinMenuGUI     = new SkinMenuGUI(this);
         this.npcEditorGUI    = new NPCEditorGUI(this);
+        this.npcActionGUI    = new com.example.advancednpc.modules.gui.NPCActionGUI(this);
 
         this.npcManager.setSkinManager(skinManager);
         this.npcManager.setStorage(npcStorage);
@@ -131,6 +133,7 @@ public class AdvancedNPCPlugin extends JavaPlugin {
 
         NPCCommand     npcCmd     = new NPCCommand(this);
         SkinGUICommand skinGuiCmd = new SkinGUICommand(this, skinMenuGUI);
+        com.example.advancednpc.commands.HoloCommand holoCmd = new com.example.advancednpc.commands.HoloCommand(this);
 
         if (getCommand("npcfant") != null) {
             getCommand("npcfant").setExecutor(npcCmd);
@@ -140,10 +143,15 @@ public class AdvancedNPCPlugin extends JavaPlugin {
             getCommand("skingui").setExecutor(skinGuiCmd);
             getCommand("skingui").setTabCompleter(skinGuiCmd);
         }
+        if (getCommand("holo") != null) {
+            getCommand("holo").setExecutor(holoCmd);
+            getCommand("holo").setTabCompleter(holoCmd);
+        }
 
         getServer().getPluginManager().registerEvents(npcManager, this);
         getServer().getPluginManager().registerEvents(skinMenuGUI, this);
         getServer().getPluginManager().registerEvents(npcEditorGUI, this);
+        getServer().getPluginManager().registerEvents(npcActionGUI, this);
 
         getServer().getScheduler().runTaskLater(this, () -> npcManager.loadAll(), 40L);
 
@@ -177,5 +185,6 @@ public class AdvancedNPCPlugin extends JavaPlugin {
     public SkinManager        getSkinManager()         { return skinManager; }
     public SkinMenuGUI        getSkinMenuGUI()         { return skinMenuGUI; }
     public NPCEditorGUI       getNPCEditorGUI()        { return npcEditorGUI; }
+    public com.example.advancednpc.modules.gui.NPCActionGUI getNPCActionGUI() { return npcActionGUI; }
     public NPCStorage         getNpcStorage()          { return npcStorage; }
 }

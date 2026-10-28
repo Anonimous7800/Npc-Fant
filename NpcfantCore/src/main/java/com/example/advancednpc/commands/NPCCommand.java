@@ -190,8 +190,18 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
 
             case "hologram":
             case "holo": {
-                if (args.length < 3) {
+                if (args.length < 2) {
                     player.sendMessage(getPrefix() + ChatColor.RED + "Uso: /npcfant hologram <uuid|nombre|nearest> <add|set|remove|list> [texto]");
+                    player.sendMessage(getPrefix() + ChatColor.YELLOW + "Para hologramas en el mapa: /holo <create|remove|add|set|list|tp|move>");
+                    return true;
+                }
+                if (args[1].equalsIgnoreCase("create") || args[1].equalsIgnoreCase("list")) {
+                    plugin.getServer().dispatchCommand(player, "holo " + String.join(" ", Arrays.copyOfRange(args, 1, args.length)));
+                    return true;
+                }
+                Optional<NPCEntity> target = npcManager.resolveNPC(args[1], player);
+                if (target.isEmpty()) {
+                    plugin.getServer().dispatchCommand(player, "holo " + String.join(" ", Arrays.copyOfRange(args, 1, args.length)));
                     return true;
                 }
                 handleHologram(player, args);

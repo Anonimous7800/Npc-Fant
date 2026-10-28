@@ -17,6 +17,11 @@ commands:
     description: Abre el menú de selección de skins para NPCs.
     usage: /skingui [open]
     permission: npcfant.skingui
+  holo:
+    aliases: [hologram, holograms, nholo]
+    description: Gestión de hologramas independientes en el mapa.
+    usage: /holo <create|remove|add|set|list|tp|move> [args]
+    permission: npcfant.hologram
 
 permissions:
   npcfant.use:

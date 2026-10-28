@@ -140,6 +140,20 @@ public class NPCEditorGUI implements Listener {
             )
         ));
 
+        inv.setItem(28, makeItem(
+            Material.COMMAND_BLOCK,
+            "§6§lComandos y Acciones al Clic",
+            "actions",
+            Arrays.asList(
+                "§7Configura qué comandos o acciones",
+                "§7ejecutará el NPC al recibir un clic.",
+                "",
+                "§fAcciones activas: §e" + (npc.getActionChain() != null ? npc.getActionChain().size() : 0),
+                "",
+                "§eClic para abrir el editor de comandos"
+            )
+        ));
+
         inv.setItem(30, makeItem(
             Material.COMPASS,
             "§e§lMover a mi posición",
@@ -233,6 +247,11 @@ public class NPCEditorGUI implements Listener {
             case "skin" -> {
                 player.closeInventory();
                 plugin.getSkinMenuGUI().openMenu(player, 0);
+            }
+
+            case "actions" -> {
+                player.closeInventory();
+                plugin.getNPCActionGUI().openGUI(player, npc);
             }
 
             case "look" -> {
