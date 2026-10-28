@@ -15,9 +15,8 @@
     <artifactId>NpcfantCore</artifactId>
     <packaging>jar</packaging>
     <name>NpcFant Core</name>
-    <description>LÃ³gica central del plugin NpcFant â€” por anonimous1221</description>
+    <description>Lógica central del plugin NpcFant — por anonimous1221</description>
 
-    <!-- ══ Nombre del JAR de salida: Npcfant-2.0.jar ══ -->
     <build>
         <finalName>Npcfant-${project.version}</finalName>
 
@@ -29,7 +28,6 @@
         </resources>
 
         <plugins>
-            <!-- Shade: empaqueta todo en un Ãºnico JAR listo para el servidor -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -40,7 +38,6 @@
                         <goals><goal>shade</goal></goals>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
-                            <!-- Reubica Gson y PacketEvents para evitar conflictos con otros plugins -->
                             <relocations>
                                 <relocation>
                                     <pattern>com.google.gson</pattern>
@@ -55,8 +52,16 @@
                                     <shadedPattern>com.example.advancednpc.libs.packetevents.platform</shadedPattern>
                                 </relocation>
                             </relocations>
-                            <!-- Excluir firmas de dependencias externas -->
                             <filters>
+                                <filter>
+                                    <artifact>com.github.retrooper:*</artifact>
+                                    <excludes>
+                                        <exclude>plugin.yml</exclude>
+                                        <exclude>paper-plugin.yml</exclude>
+                                        <exclude>bungee.yml</exclude>
+                                        <exclude>velocity-plugin.json</exclude>
+                                    </excludes>
+                                </filter>
                                 <filter>
                                     <artifact>*:*</artifact>
                                     <excludes>
@@ -74,29 +79,25 @@
     </build>
 
     <dependencies>
-        <!-- Paper API -->
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
         </dependency>
-        <!-- API interna -->
         <dependency>
             <groupId>com.example.advancednpc</groupId>
             <artifactId>NpcfantAPI</artifactId>
         </dependency>
-        <!-- Gson para peticiones HTTP de skins -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
         </dependency>
-        <!-- PacketEvents: spawn de FakePlayer multi-versión (1.17-26.3) -->
         <dependency>
             <groupId>com.github.retrooper</groupId>
             <artifactId>packetevents-spigot</artifactId>
             <version>2.13.0</version>
             <scope>compile</scope>
         </dependency>
-            <dependency>
+        <dependency>
             <groupId>com.example.advancednpc</groupId>
             <artifactId>v1_17_R1</artifactId>
             <version>${project.version}</version>
@@ -196,7 +197,5 @@
             <artifactId>v26_3_R1</artifactId>
             <version>${project.version}</version>
         </dependency>
-
     </dependencies>
 </project>
-

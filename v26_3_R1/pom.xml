@@ -22,7 +22,7 @@
             <groupId>com.example.advancednpc</groupId>
             <artifactId>NpcfantAPI</artifactId>
         </dependency>
-        <!-- Spigot NMS (Temporalmente 1.21.4 para compilar placeholder, cambiar a 26.3 cuando salga) -->
+        
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>

@@ -1,4 +1,4 @@
-﻿package com.example.advancednpc.modules.equipment;
+package com.example.advancednpc.modules.equipment;
 
 import org.bukkit.inventory.ItemStack;
 

@@ -1,4 +1,4 @@
-﻿package com.example.advancednpc.modules.animation;
+package com.example.advancednpc.modules.animation;
 
 public enum NPCPose {
 

@@ -1,4 +1,4 @@
-﻿package com.example.advancednpc.modules.skin;
+package com.example.advancednpc.modules.skin;
 
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;

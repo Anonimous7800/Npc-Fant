@@ -1,4 +1,4 @@
-﻿package com.example.advancednpc.modules.skin;
+package com.example.advancednpc.modules.skin;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;

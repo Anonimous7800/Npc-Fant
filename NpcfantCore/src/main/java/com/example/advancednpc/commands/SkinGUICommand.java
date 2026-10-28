@@ -1,4 +1,4 @@
-﻿package com.example.advancednpc.commands;
+package com.example.advancednpc.commands;
 
 import com.example.advancednpc.AdvancedNPCPlugin;
 import com.example.advancednpc.modules.gui.SkinMenuGUI;

@@ -1,4 +1,4 @@
-﻿package com.example.advancednpc.nms;
+package com.example.advancednpc.nms;
 
 import com.example.advancednpc.api.INPC;
 import com.example.advancednpc.api.NPCAdapter;

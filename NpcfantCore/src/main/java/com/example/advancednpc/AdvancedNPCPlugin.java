@@ -1,4 +1,4 @@
-﻿package com.example.advancednpc;
+package com.example.advancednpc;
 
 import com.example.advancednpc.commands.NPCCommand;
 import com.example.advancednpc.commands.SkinGUICommand;

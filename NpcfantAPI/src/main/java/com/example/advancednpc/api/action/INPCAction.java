@@ -1,4 +1,4 @@
-﻿package com.example.advancednpc.api.action;
+package com.example.advancednpc.api.action;
 
 import org.bukkit.entity.Player;
 

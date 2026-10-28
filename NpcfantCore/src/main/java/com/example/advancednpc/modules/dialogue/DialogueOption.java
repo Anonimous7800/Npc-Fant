@@ -1,4 +1,4 @@
-﻿package com.example.advancednpc.modules.dialogue;
+package com.example.advancednpc.modules.dialogue;
 
 import com.example.advancednpc.api.action.INPCAction;
 

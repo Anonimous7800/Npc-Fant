@@ -1,4 +1,4 @@
-﻿package com.example.advancednpc.config;
+package com.example.advancednpc.config;
 
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;

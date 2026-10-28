@@ -1,4 +1,4 @@
-﻿package com.example.advancednpc.modules.gui;
+package com.example.advancednpc.modules.gui;
 
 import com.example.advancednpc.AdvancedNPCPlugin;
 import com.example.advancednpc.modules.skin.SkinData;

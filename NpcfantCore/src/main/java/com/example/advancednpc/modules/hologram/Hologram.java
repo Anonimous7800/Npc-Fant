@@ -1,4 +1,4 @@
-﻿package com.example.advancednpc.modules.hologram;
+package com.example.advancednpc.modules.hologram;
 
 import com.example.advancednpc.api.IHologram;
 import org.bukkit.Bukkit;

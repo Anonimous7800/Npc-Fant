@@ -1,4 +1,4 @@
-﻿package com.example.advancednpc.modules.hologram;
+package com.example.advancednpc.modules.hologram;
 
 public class HologramLine {
 

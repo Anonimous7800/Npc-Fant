@@ -1,4 +1,4 @@
-﻿package com.example.advancednpc.api.event;
+package com.example.advancednpc.api.event;
 
 import com.example.advancednpc.api.INPC;
 import org.bukkit.event.Event;

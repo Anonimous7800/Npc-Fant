@@ -1,4 +1,4 @@
-﻿package com.example.advancednpc.api;
+package com.example.advancednpc.api;
 
 import org.bukkit.Location;
 import org.bukkit.entity.EntityType;

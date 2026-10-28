@@ -1,4 +1,4 @@
-﻿package com.example.advancednpc.modules.npc;
+package com.example.advancednpc.modules.npc;
 
 public enum NPCType {
 

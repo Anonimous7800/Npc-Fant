@@ -1,4 +1,4 @@
-﻿package com.example.advancednpc.modules.dialogue;
+package com.example.advancednpc.modules.dialogue;
 
 import com.example.advancednpc.AdvancedNPCPlugin;
 import org.bukkit.Bukkit;

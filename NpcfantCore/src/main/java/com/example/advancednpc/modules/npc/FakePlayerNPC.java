@@ -1,24 +1,38 @@
-﻿package com.example.advancednpc.modules.npc;
+package com.example.advancednpc.modules.npc;
 
+import com.example.advancednpc.modules.animation.NPCPose;
+import com.example.advancednpc.modules.equipment.NPCEquipment;
 import com.example.advancednpc.modules.skin.SkinData;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
+import com.github.retrooper.packetevents.protocol.entity.pose.EntityPose;
+import com.github.retrooper.packetevents.protocol.entity.type.EntityType;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
+import com.github.retrooper.packetevents.protocol.item.ItemStack;
+import com.github.retrooper.packetevents.protocol.player.Equipment;
+import com.github.retrooper.packetevents.protocol.player.EquipmentSlot;
 import com.github.retrooper.packetevents.protocol.player.GameMode;
 import com.github.retrooper.packetevents.protocol.player.TextureProperty;
 import com.github.retrooper.packetevents.protocol.player.UserProfile;
 import com.github.retrooper.packetevents.util.Vector3d;
 import com.github.retrooper.packetevents.wrapper.play.server.*;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class FakePlayerNPC {
 
+    private static final AtomicInteger NEXT_ENTITY_ID = new AtomicInteger(100000);
 
     public static final String STEVE_VALUE =
         "ewogICJ0aW1lc3RhbXAiIDogMTcxMDAwMDAwMDAwMCwKICAicHJvZmlsZUlkIiA6" +
@@ -29,116 +43,160 @@ public class FakePlayerNPC {
         "MmI3NDZhMzYzNWEzYzRlM2VjMjZhNjZlIgogICAgfQogIH0KfQ==";
     public static final String STEVE_SIGNATURE = "";
 
-
     private final int          entityId;
     private final UUID         uuid;
     private       String       name;
     private       Location     location;
     private       SkinData     skinData;
+    private       NPCType      npcType      = NPCType.PLAYER;
+    private       NPCPose      pose         = NPCPose.STANDING;
+    private       NPCEquipment equipment    = new NPCEquipment();
+    private       boolean      invisible    = false;
+    private       boolean      glowing      = false;
+    private       boolean      showNametag  = true;
     private final Plugin       plugin;
 
-
-    private final Set<UUID> spawnedFor = new HashSet<>();
+    private final Set<UUID> spawnedFor = ConcurrentHashMap.newKeySet();
 
     public FakePlayerNPC(UUID uuid, String name, Location location, Plugin plugin) {
         this.uuid     = uuid;
-        this.name     = name;
+        this.name     = ChatColor.translateAlternateColorCodes('&', name);
         this.location = location.clone();
         this.plugin   = plugin;
-        this.entityId = (int)(Math.random() * Integer.MAX_VALUE / 2) + 1000;
-
+        this.entityId = NEXT_ENTITY_ID.getAndIncrement();
         this.skinData = new SkinData(STEVE_VALUE, STEVE_SIGNATURE);
     }
 
-
-
-
     public void spawnForAll() {
         for (Player p : Bukkit.getOnlinePlayers()) {
-            spawnForPlayer(p);
+            if (p.getWorld().equals(location.getWorld())) {
+                spawnForPlayer(p);
+            }
         }
     }
 
-
     public void spawnForPlayer(Player player) {
+        if (player == null || !player.isOnline()) return;
+        if (location.getWorld() == null || !player.getWorld().equals(location.getWorld())) return;
         if (spawnedFor.contains(player.getUniqueId())) return;
 
         try {
             var channel = PacketEvents.getAPI().getPlayerManager().getChannel(player);
             if (channel == null) return;
 
+            spawnedFor.add(player.getUniqueId());
 
-            sendAddToTabList(player);
+            if (npcType == NPCType.PLAYER) {
+                sendAddToTabList(player);
 
+                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    if (!player.isOnline() || !spawnedFor.contains(player.getUniqueId())) return;
+                    try {
+                        sendSpawnPacket(player);
+                        sendRotationPackets(player, location.getYaw(), location.getPitch());
+                        sendMetadataPacket(player);
+                        sendEquipmentPackets(player);
 
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                try {
-                    sendSpawnPacket(player);
-                    sendMetadataPacket(player);
-                    spawnedFor.add(player.getUniqueId());
-
-
-                    Bukkit.getScheduler().runTaskLater(plugin, () ->
-                        sendRemoveFromTabList(player), 40L);
-                } catch (Exception e) {
-                    plugin.getLogger().warning("[NpcFant] Error al spawnear NPC para " +
-                        player.getName() + ": " + e.getMessage());
-                }
-            }, 2L);
+                        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                            if (player.isOnline()) {
+                                sendRemoveFromTabList(player);
+                            }
+                        }, 40L);
+                    } catch (Exception e) {
+                        spawnedFor.remove(player.getUniqueId());
+                        plugin.getLogger().warning("[NpcFant] Error al spawnear NPC para " +
+                            player.getName() + ": " + e.getMessage());
+                    }
+                }, 2L);
+            } else {
+                sendSpawnPacket(player);
+                sendRotationPackets(player, location.getYaw(), location.getPitch());
+                sendMetadataPacket(player);
+                sendEquipmentPackets(player);
+            }
 
         } catch (Exception e) {
+            spawnedFor.remove(player.getUniqueId());
             plugin.getLogger().warning("[NpcFant] Error en spawnForPlayer: " + e.getMessage());
         }
     }
 
-
-
-
     public void despawnForAll() {
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            despawnForPlayer(p);
+        for (UUID uid : new HashSet<>(spawnedFor)) {
+            Player p = Bukkit.getPlayer(uid);
+            if (p != null && p.isOnline()) {
+                despawnForPlayer(p);
+            }
         }
         spawnedFor.clear();
     }
 
-
     public void despawnForPlayer(Player player) {
-        if (!spawnedFor.contains(player.getUniqueId())) return;
+        if (player == null) return;
+        if (!spawnedFor.remove(player.getUniqueId())) return;
         try {
             WrapperPlayServerDestroyEntities destroyPacket =
                 new WrapperPlayServerDestroyEntities(entityId);
             PacketEvents.getAPI().getPlayerManager().sendPacket(player, destroyPacket);
-            sendRemoveFromTabList(player);
-            spawnedFor.remove(player.getUniqueId());
+            if (npcType == NPCType.PLAYER) {
+                sendRemoveFromTabList(player);
+            }
         } catch (Exception e) {
             plugin.getLogger().warning("[NpcFant] Error al despawnear: " + e.getMessage());
         }
     }
 
+    public void removePlayerFromTracking(UUID playerId) {
+        spawnedFor.remove(playerId);
+    }
 
-
-
-    public void updateSkin(SkinData newSkin) {
-        this.skinData = newSkin;
-
+    public void respawnForAll() {
         Set<UUID> hadSpawned = new HashSet<>(spawnedFor);
         despawnForAll();
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             for (UUID uid : hadSpawned) {
                 Player p = Bukkit.getPlayer(uid);
-                if (p != null) spawnForPlayer(p);
+                if (p != null && p.isOnline()) {
+                    spawnForPlayer(p);
+                }
             }
-        }, 5L);
+        }, 4L);
     }
 
+    public void updateSkin(SkinData newSkin) {
+        if (newSkin != null) {
+            this.skinData = newSkin;
+        }
+        respawnForAll();
+    }
 
+    public void updateMetadataForAll() {
+        for (UUID uid : new HashSet<>(spawnedFor)) {
+            Player p = Bukkit.getPlayer(uid);
+            if (p != null && p.isOnline()) {
+                sendMetadataPacket(p);
+            }
+        }
+    }
 
+    public void updateEquipmentForAll() {
+        for (UUID uid : new HashSet<>(spawnedFor)) {
+            Player p = Bukkit.getPlayer(uid);
+            if (p != null && p.isOnline()) {
+                sendEquipmentPackets(p);
+            }
+        }
+    }
 
     public void teleport(Location newLocation) {
         this.location = newLocation.clone();
         for (UUID uid : new HashSet<>(spawnedFor)) {
             Player p = Bukkit.getPlayer(uid);
-            if (p == null) continue;
+            if (p == null || !p.isOnline()) continue;
+            if (!p.getWorld().equals(newLocation.getWorld())) {
+                despawnForPlayer(p);
+                continue;
+            }
             try {
                 WrapperPlayServerEntityTeleport teleportPacket = new WrapperPlayServerEntityTeleport(
                     entityId,
@@ -148,74 +206,227 @@ public class FakePlayerNPC {
                     false
                 );
                 PacketEvents.getAPI().getPlayerManager().sendPacket(p, teleportPacket);
+                sendRotationPackets(p, newLocation.getYaw(), newLocation.getPitch());
             } catch (Exception e) {
                 plugin.getLogger().warning("[NpcFant] Error al teletransportar NPC: " + e.getMessage());
             }
         }
     }
 
-
     public void lookAt(Player target) {
+        if (target == null || !target.isOnline() || location.getWorld() == null) return;
+        if (!target.getWorld().equals(location.getWorld())) return;
+
         Location eye  = location.clone().add(0, 1.62, 0);
         Location tEye = target.getEyeLocation();
         double   dx   = tEye.getX() - eye.getX();
         double   dy   = tEye.getY() - eye.getY();
         double   dz   = tEye.getZ() - eye.getZ();
         double   dist = Math.sqrt(dx * dx + dz * dz);
-        float    yaw  = (float)(Math.toDegrees(Math.atan2(-dx, dz)));
+        float    yaw   = (float)(Math.toDegrees(Math.atan2(-dx, dz)));
         float    pitch = (float)(-Math.toDegrees(Math.atan2(dy, dist)));
 
-        for (UUID uid : new HashSet<>(spawnedFor)) {
-            Player p = Bukkit.getPlayer(uid);
-            if (p == null) continue;
-            try {
-                WrapperPlayServerEntityHeadLook headLookPacket =
-                    new WrapperPlayServerEntityHeadLook(entityId, yaw);
-                WrapperPlayServerEntityRotation rotPacket =
-                    new WrapperPlayServerEntityRotation(entityId, yaw, pitch, true);
-                PacketEvents.getAPI().getPlayerManager().sendPacket(p, headLookPacket);
-                PacketEvents.getAPI().getPlayerManager().sendPacket(p, rotPacket);
-            } catch (Exception ignored) {}
-        }
+        sendRotationPackets(target, yaw, pitch);
     }
 
+    private void sendRotationPackets(Player player, float yaw, float pitch) {
+        try {
+            WrapperPlayServerEntityHeadLook headLookPacket =
+                new WrapperPlayServerEntityHeadLook(entityId, yaw);
+            WrapperPlayServerEntityRotation rotPacket =
+                new WrapperPlayServerEntityRotation(entityId, yaw, pitch, true);
+            PacketEvents.getAPI().getPlayerManager().sendPacket(player, headLookPacket);
+            PacketEvents.getAPI().getPlayerManager().sendPacket(player, rotPacket);
+        } catch (Exception ignored) {}
+    }
 
+    private String getSafeProfileName() {
+        String colored = ChatColor.translateAlternateColorCodes('&', name);
+        String stripped = ChatColor.stripColor(colored);
+        if (stripped == null || stripped.isEmpty()) {
+            stripped = "NPC_" + (entityId % 10000);
+        }
+        stripped = stripped.replaceAll("[^a-zA-Z0-9_]", "_");
+        if (stripped.length() > 16) {
+            stripped = stripped.substring(0, 16);
+        }
+        return stripped;
+    }
 
     private void sendAddToTabList(Player player) {
-        List<TextureProperty> textures = skinData != null && skinData.getValue() != null
-                && !skinData.getValue().isEmpty()
-            ? Collections.singletonList(new TextureProperty("textures", skinData.getValue(),
-                skinData.getSignature()))
-            : Collections.emptyList();
+        List<TextureProperty> textures = new ArrayList<>();
+        if (skinData != null && skinData.getValue() != null && !skinData.getValue().isEmpty()) {
+            String sig = (skinData.getSignature() != null && !skinData.getSignature().isEmpty())
+                ? skinData.getSignature()
+                : null;
+            textures.add(new TextureProperty("textures", skinData.getValue(), sig));
+        }
 
-        UserProfile profile = new UserProfile(uuid, name, textures);
+        String profileName = getSafeProfileName();
+        UserProfile profile = new UserProfile(uuid, profileName, textures);
+
+        Component displayComponent = LegacyComponentSerializer.legacySection()
+            .deserialize(ChatColor.translateAlternateColorCodes('&', name));
+
+        EnumSet<WrapperPlayServerPlayerInfoUpdate.Action> actions = EnumSet.of(
+            WrapperPlayServerPlayerInfoUpdate.Action.ADD_PLAYER,
+            WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_LISTED,
+            WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_DISPLAY_NAME
+        );
 
         WrapperPlayServerPlayerInfoUpdate infoUpdate = new WrapperPlayServerPlayerInfoUpdate(
-            EnumSet.of(WrapperPlayServerPlayerInfoUpdate.Action.ADD_PLAYER,
-                       WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_LISTED),
-            new WrapperPlayServerPlayerInfoUpdate.PlayerInfo(profile, false,
-                0, GameMode.SURVIVAL, null, null)
+            actions,
+            new WrapperPlayServerPlayerInfoUpdate.PlayerInfo(
+                profile,
+                false,
+                0,
+                GameMode.SURVIVAL,
+                displayComponent,
+                null
+            )
         );
         PacketEvents.getAPI().getPlayerManager().sendPacket(player, infoUpdate);
     }
 
     private void sendSpawnPacket(Player player) {
+        EntityType entityType = resolveEntityType(npcType);
         WrapperPlayServerSpawnEntity spawnPacket = new WrapperPlayServerSpawnEntity(
-            entityId, Optional.of(uuid), EntityTypes.PLAYER,
+            entityId,
+            Optional.of(uuid),
+            entityType,
             new Vector3d(location.getX(), location.getY(), location.getZ()),
-            location.getPitch(), location.getYaw(), location.getYaw(), 0,
+            location.getPitch(),
+            location.getYaw(),
+            location.getYaw(),
+            0,
             Optional.empty()
         );
         PacketEvents.getAPI().getPlayerManager().sendPacket(player, spawnPacket);
     }
 
     private void sendMetadataPacket(Player player) {
+        List<EntityData<?>> metadata = new ArrayList<>();
 
-        List<EntityData> metadata = new ArrayList<>();
-        metadata.add(new EntityData(17, EntityDataTypes.BYTE, (byte) 0x7F));
+        byte flags = 0;
+        if (pose == NPCPose.SNEAKING) flags |= 0x02;
+        if (invisible)                flags |= 0x20;
+        if (glowing)                  flags |= 0x40;
+        metadata.add(new EntityData<>(0, EntityDataTypes.BYTE, flags));
+
+        EntityPose pePose = switch (pose) {
+            case SNEAKING    -> EntityPose.CROUCHING;
+            case SLEEPING    -> EntityPose.SLEEPING;
+            case SWIMMING    -> EntityPose.SWIMMING;
+            case SPIN_ATTACK -> EntityPose.SPIN_ATTACK;
+            case DYING       -> EntityPose.DYING;
+            case SITTING     -> EntityPose.SITTING;
+            default          -> EntityPose.STANDING;
+        };
+        metadata.add(new EntityData<>(6, EntityDataTypes.ENTITY_POSE, pePose));
+
+        if (npcType == NPCType.PLAYER) {
+            metadata.add(new EntityData<>(17, EntityDataTypes.BYTE, (byte) 0x7F));
+        } else if (showNametag && name != null && !name.isEmpty()) {
+            Component customName = LegacyComponentSerializer.legacySection()
+                .deserialize(ChatColor.translateAlternateColorCodes('&', name));
+            metadata.add(new EntityData<>(2, EntityDataTypes.OPTIONAL_ADV_COMPONENT, Optional.of(customName)));
+            metadata.add(new EntityData<>(3, EntityDataTypes.BOOLEAN, true));
+        }
+
         WrapperPlayServerEntityMetadata metaPacket =
             new WrapperPlayServerEntityMetadata(entityId, metadata);
         PacketEvents.getAPI().getPlayerManager().sendPacket(player, metaPacket);
+    }
+
+    private void sendEquipmentPackets(Player player) {
+        if (equipment == null) return;
+        try {
+            List<Equipment> eqList = new ArrayList<>();
+            eqList.add(new Equipment(EquipmentSlot.MAIN_HAND, toPeItem(equipment.getMainHand())));
+            eqList.add(new Equipment(EquipmentSlot.OFF_HAND,  toPeItem(equipment.getOffHand())));
+            eqList.add(new Equipment(EquipmentSlot.HELMET,    toPeItem(equipment.getHelmet())));
+            eqList.add(new Equipment(EquipmentSlot.CHEST_PLATE, toPeItem(equipment.getChestplate())));
+            eqList.add(new Equipment(EquipmentSlot.LEGGINGS,  toPeItem(equipment.getLeggings())));
+            eqList.add(new Equipment(EquipmentSlot.BOOTS,     toPeItem(equipment.getBoots())));
+
+            WrapperPlayServerEntityEquipment eqPacket =
+                new WrapperPlayServerEntityEquipment(entityId, eqList);
+            PacketEvents.getAPI().getPlayerManager().sendPacket(player, eqPacket);
+        } catch (Exception e) {
+            plugin.getLogger().warning("[NpcFant] Error enviando equipamiento: " + e.getMessage());
+        }
+    }
+
+    private ItemStack toPeItem(org.bukkit.inventory.ItemStack bukkitItem) {
+        if (bukkitItem == null || bukkitItem.getType().isAir()) {
+            return ItemStack.EMPTY;
+        }
+        return SpigotConversionUtil.fromBukkitItemStack(bukkitItem);
+    }
+
+    private EntityType resolveEntityType(NPCType type) {
+        if (type == null || type == NPCType.PLAYER) return EntityTypes.PLAYER;
+        return switch (type) {
+            case VILLAGER         -> EntityTypes.VILLAGER;
+            case WANDERING_TRADER -> EntityTypes.WANDERING_TRADER;
+            case COW              -> EntityTypes.COW;
+            case PIG              -> EntityTypes.PIG;
+            case SHEEP            -> EntityTypes.SHEEP;
+            case CHICKEN          -> EntityTypes.CHICKEN;
+            case HORSE            -> EntityTypes.HORSE;
+            case DONKEY           -> EntityTypes.DONKEY;
+            case MULE             -> EntityTypes.MULE;
+            case LLAMA            -> EntityTypes.LLAMA;
+            case CAT              -> EntityTypes.CAT;
+            case DOG, WOLF        -> EntityTypes.WOLF;
+            case RABBIT           -> EntityTypes.RABBIT;
+            case TURTLE           -> EntityTypes.TURTLE;
+            case AXOLOTL          -> EntityTypes.AXOLOTL;
+            case FROG             -> EntityTypes.FROG;
+            case SNIFFER          -> EntityTypes.SNIFFER;
+            case ALLAY            -> EntityTypes.ALLAY;
+            case POLAR_BEAR       -> EntityTypes.POLAR_BEAR;
+            case BEE              -> EntityTypes.BEE;
+            case GOAT             -> EntityTypes.GOAT;
+            case PANDA            -> EntityTypes.PANDA;
+            case FOX              -> EntityTypes.FOX;
+            case IRON_GOLEM       -> EntityTypes.IRON_GOLEM;
+            case SNOWMAN          -> EntityTypes.SNOW_GOLEM;
+            case ZOMBIE           -> EntityTypes.ZOMBIE;
+            case SKELETON         -> EntityTypes.SKELETON;
+            case CREEPER          -> EntityTypes.CREEPER;
+            case SPIDER           -> EntityTypes.SPIDER;
+            case ENDERMAN         -> EntityTypes.ENDERMAN;
+            case WITCH            -> EntityTypes.WITCH;
+            case PILLAGER         -> EntityTypes.PILLAGER;
+            case VINDICATOR       -> EntityTypes.VINDICATOR;
+            case EVOKER           -> EntityTypes.EVOKER;
+            case PHANTOM          -> EntityTypes.PHANTOM;
+            case DROWNED          -> EntityTypes.DROWNED;
+            case HUSK             -> EntityTypes.HUSK;
+            case STRAY            -> EntityTypes.STRAY;
+            case WARDEN           -> EntityTypes.WARDEN;
+            case BREEZE           -> EntityTypes.BREEZE;
+            case ENDER_DRAGON     -> EntityTypes.ENDER_DRAGON;
+            case WITHER           -> EntityTypes.WITHER;
+            case ELDER_GUARDIAN   -> EntityTypes.ELDER_GUARDIAN;
+            case BLAZE            -> EntityTypes.BLAZE;
+            case GHAST            -> EntityTypes.GHAST;
+            case MAGMA_CUBE       -> EntityTypes.MAGMA_CUBE;
+            case PIGLIN           -> EntityTypes.PIGLIN;
+            case PIGLIN_BRUTE     -> EntityTypes.PIGLIN_BRUTE;
+            case ZOMBIFIED_PIGLIN -> EntityTypes.ZOMBIFIED_PIGLIN;
+            case STRIDER          -> EntityTypes.STRIDER;
+            case HOGLIN           -> EntityTypes.HOGLIN;
+            case ZOGLIN           -> EntityTypes.ZOGLIN;
+            case SQUID            -> EntityTypes.SQUID;
+            case GLOW_SQUID       -> EntityTypes.GLOW_SQUID;
+            case FISH_COD         -> EntityTypes.COD;
+            case FISH_SALMON      -> EntityTypes.SALMON;
+            case DOLPHIN          -> EntityTypes.DOLPHIN;
+            case GUARDIAN         -> EntityTypes.GUARDIAN;
+            default               -> EntityTypes.PLAYER;
+        };
     }
 
     private void sendRemoveFromTabList(Player player) {
@@ -226,13 +437,51 @@ public class FakePlayerNPC {
         } catch (Exception ignored) {}
     }
 
-
     public int      getEntityId()  { return entityId; }
     public UUID     getUUID()      { return uuid; }
     public String   getName()      { return name; }
-    public void     setName(String n) { this.name = n; }
+    public void     setName(String n) {
+        this.name = ChatColor.translateAlternateColorCodes('&', n);
+        respawnForAll();
+    }
     public Location getLocation()  { return location.clone(); }
     public SkinData getSkinData()  { return skinData; }
     public boolean  isSpawnedFor(UUID uid) { return spawnedFor.contains(uid); }
     public Set<UUID> getSpawnedFor() { return Collections.unmodifiableSet(spawnedFor); }
+
+    public NPCType getNpcType() { return npcType; }
+    public void setNpcType(NPCType type) {
+        this.npcType = type != null ? type : NPCType.PLAYER;
+        respawnForAll();
+    }
+
+    public NPCPose getPose() { return pose; }
+    public void setPose(NPCPose pose) {
+        this.pose = pose != null ? pose : NPCPose.STANDING;
+        updateMetadataForAll();
+    }
+
+    public NPCEquipment getEquipment() { return equipment; }
+    public void setEquipment(NPCEquipment equipment) {
+        this.equipment = equipment != null ? equipment : new NPCEquipment();
+        updateEquipmentForAll();
+    }
+
+    public boolean isInvisible() { return invisible; }
+    public void setInvisible(boolean invisible) {
+        this.invisible = invisible;
+        updateMetadataForAll();
+    }
+
+    public boolean isGlowing() { return glowing; }
+    public void setGlowing(boolean glowing) {
+        this.glowing = glowing;
+        updateMetadataForAll();
+    }
+
+    public boolean isShowNametag() { return showNametag; }
+    public void setShowNametag(boolean showNametag) {
+        this.showNametag = showNametag;
+        updateMetadataForAll();
+    }
 }

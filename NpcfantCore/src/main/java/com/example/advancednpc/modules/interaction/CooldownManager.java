@@ -1,4 +1,4 @@
-﻿package com.example.advancednpc.modules.interaction;
+package com.example.advancednpc.modules.interaction;
 
 import java.util.HashMap;
 import java.util.Map;

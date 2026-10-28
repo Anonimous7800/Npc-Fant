@@ -1,4 +1,4 @@
-﻿package com.example.advancednpc.modules.interaction;
+package com.example.advancednpc.modules.interaction;
 
 import com.example.advancednpc.api.action.INPCAction;
 import org.bukkit.Sound;
