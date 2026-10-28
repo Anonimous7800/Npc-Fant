@@ -74,19 +74,8 @@ public class AdvancedNPCPlugin extends JavaPlugin {
 
             ServerVersion latest = ServerVersion.getLatest();
             Field nameField = ServerVersion.class.getDeclaredField("name");
-            try {
-                Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
-                Field theUnsafeField = unsafeClass.getDeclaredField("theUnsafe");
-                theUnsafeField.setAccessible(true);
-                Object unsafe = theUnsafeField.get(null);
-                Method objectFieldOffset = unsafeClass.getMethod("objectFieldOffset", Field.class);
-                Method putObject = unsafeClass.getMethod("putObject", Object.class, long.class, Object.class);
-                long offset = (long) objectFieldOffset.invoke(unsafe, nameField);
-                putObject.invoke(unsafe, latest, offset, mcVersion);
-            } catch (Throwable ignored) {
-                nameField.setAccessible(true);
-                nameField.set(latest, mcVersion);
-            }
+            nameField.setAccessible(true);
+            nameField.set(latest, mcVersion);
         } catch (Throwable ignored) {
         }
     }

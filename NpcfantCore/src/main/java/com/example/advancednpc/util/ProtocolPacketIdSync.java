@@ -8,6 +8,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -85,6 +86,7 @@ public final class ProtocolPacketIdSync {
         mapClient("open_sign_editor", PacketType.Play.Server.OPEN_SIGN_EDITOR);
         mapClient("ping", PacketType.Play.Server.PING);
         mapClient("pong_response", PacketType.Play.Server.DEBUG_PONG);
+        mapClient("ping_response", PacketType.Play.Server.DEBUG_PONG);
         mapClient("place_ghost_recipe", PacketType.Play.Server.CRAFT_RECIPE_RESPONSE);
         mapClient("player_abilities", PacketType.Play.Server.PLAYER_ABILITIES);
         mapClient("player_chat", PacketType.Play.Server.CHAT_MESSAGE);
@@ -261,37 +263,52 @@ public final class ProtocolPacketIdSync {
                 extractFromObject(root, clientboundIds, serverboundIds, visited, 0);
             }
 
+            if (clientboundIds.containsKey("add_entity") && clientboundIds.get("add_entity") == 0) {
+                Map<String, Integer> shifted = new HashMap<>();
+                shifted.put("bundle_delimiter", 0);
+                for (Map.Entry<String, Integer> e : clientboundIds.entrySet()) {
+                    shifted.put(e.getKey(), e.getValue() + 1);
+                }
+                clientboundIds = shifted;
+            }
+
             int updatedClient = 0;
             int updatedServer = 0;
 
             if (!clientboundIds.isEmpty()) {
-                updatedClient = applyClientboundIds(clientboundIds);
+                updatedClient = applyClientboundIds(clientboundIds, logger);
             }
             if (!serverboundIds.isEmpty()) {
-                updatedServer = applyServerboundIds(serverboundIds);
+                updatedServer = applyServerboundIds(serverboundIds, logger);
             }
 
+            ensureConfigurationFallbacks();
+
             if (logger != null && (updatedClient > 0 || updatedServer > 0)) {
-                logger.info("[NpcFant] Protocol sync completado con NMS GameProtocols (Clientbound: "
-                    + updatedClient + ", Serverbound: " + updatedServer + ", McVersion: " + Bukkit.getBukkitVersion() + ")");
+                logger.info("Protocol sync completado con NMS GameProtocols (Clientbound: "
+                    + updatedClient + "/" + clientboundIds.size()
+                    + ", Serverbound: " + updatedServer + "/" + serverboundIds.size()
+                    + ", JOIN_GAME=" + PacketType.Play.Server.JOIN_GAME.getId(com.github.retrooper.packetevents.protocol.player.ClientVersion.getLatest())
+                    + ", SPAWN_ENTITY=" + PacketType.Play.Server.SPAWN_ENTITY.getId(com.github.retrooper.packetevents.protocol.player.ClientVersion.getLatest())
+                    + ", McVersion: " + Bukkit.getBukkitVersion() + ")");
             }
         } catch (Throwable ignored) {
         }
     }
 
-    private static void extractFromObject(
+    private static boolean extractFromObject(
         Object obj,
         Map<String, Integer> clientboundIds,
         Map<String, Integer> serverboundIds,
         IdentityHashMap<Object, Boolean> visited,
         int depth
     ) {
-        if (obj == null || depth > 4 || visited.containsKey(obj)) return;
+        if (obj == null || depth > 4 || visited.containsKey(obj)) return false;
         visited.put(obj, Boolean.TRUE);
 
         Class<?> cls = obj.getClass();
         String clsName = cls.getName();
-        if (clsName.startsWith("java.lang.") || clsName.startsWith("java.util.concurrent.")) return;
+        if (clsName.startsWith("java.lang.") || clsName.startsWith("java.util.concurrent.")) return false;
 
         try {
             for (Method m : cls.getMethods()) {
@@ -299,23 +316,29 @@ public final class ProtocolPacketIdSync {
                     m.setAccessible(true);
                     Object details = m.invoke(obj);
                     if (details != null) {
+                        int before = clientboundIds.size() + serverboundIds.size();
                         extractViaDetails(details, clientboundIds, serverboundIds);
+                        if (clientboundIds.size() + serverboundIds.size() > before) {
+                            return true;
+                        }
                     }
                 }
             }
         } catch (Throwable ignored) {}
 
         if (obj instanceof List<?> list && !list.isEmpty()) {
+            boolean foundAny = false;
             for (int i = 0; i < list.size(); i++) {
                 Object elem = list.get(i);
                 if (elem != null) {
                     Object packetTypeObj = findPacketType(elem);
                     if (packetTypeObj != null) {
                         recordPacketType(packetTypeObj, i, clientboundIds, serverboundIds);
+                        foundAny = true;
                     }
                 }
             }
-            return;
+            if (foundAny) return true;
         }
 
         Class<?> curr = cls;
@@ -326,12 +349,15 @@ public final class ProtocolPacketIdSync {
                     f.setAccessible(true);
                     Object val = f.get(obj);
                     if (val != null) {
-                        extractFromObject(val, clientboundIds, serverboundIds, visited, depth + 1);
+                        if (extractFromObject(val, clientboundIds, serverboundIds, visited, depth + 1)) {
+                            return true;
+                        }
                     }
                 } catch (Throwable ignored) {}
             }
             curr = curr.getSuperclass();
         }
+        return false;
     }
 
     private static void extractViaDetails(
@@ -426,7 +452,7 @@ public final class ProtocolPacketIdSync {
     }
 
     @SuppressWarnings("unchecked")
-    private static int applyClientboundIds(Map<String, Integer> clientboundIds) throws Exception {
+    private static int applyClientboundIds(Map<String, Integer> clientboundIds, Logger logger) throws Exception {
         Field idsField = PacketType.Play.Server.class.getDeclaredField("ids");
         idsField.setAccessible(true);
         Field mapField = PacketType.Play.Server.class.getDeclaredField("PACKET_TYPE_ID_MAP");
@@ -446,21 +472,33 @@ public final class ProtocolPacketIdSync {
         }
 
         int count = 0;
+        List<String> unmapped = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : clientboundIds.entrySet()) {
             PacketType.Play.Server pt = CLIENTBOUND_MAP.get(entry.getKey());
+            int id = entry.getValue();
             if (pt != null) {
-                int id = entry.getValue();
                 int[] arr = (int[]) idsField.get(pt);
                 arr[latestIdx] = id;
                 versionMap.put(id, pt);
                 count++;
+            } else {
+                versionMap.put(id, PacketType.Play.Server.MAP_CHUNK_BULK);
+                unmapped.add(entry.getKey() + "=" + id);
             }
+        }
+
+        for (int id = 0; id < 256; id++) {
+            versionMap.putIfAbsent(id, PacketType.Play.Server.MAP_CHUNK_BULK);
+        }
+
+        if (logger != null && !unmapped.isEmpty()) {
+            logger.info("Paquetes Clientbound 26.3 nuevos mapeados como passthrough: " + unmapped);
         }
         return count;
     }
 
     @SuppressWarnings("unchecked")
-    private static int applyServerboundIds(Map<String, Integer> serverboundIds) throws Exception {
+    private static int applyServerboundIds(Map<String, Integer> serverboundIds, Logger logger) throws Exception {
         Field idsField = PacketType.Play.Client.class.getDeclaredField("ids");
         idsField.setAccessible(true);
         Field mapField = PacketType.Play.Client.class.getDeclaredField("PACKET_TYPE_ID_MAP");
@@ -480,17 +518,53 @@ public final class ProtocolPacketIdSync {
         }
 
         int count = 0;
+        List<String> unmapped = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : serverboundIds.entrySet()) {
             PacketType.Play.Client pt = SERVERBOUND_MAP.get(entry.getKey());
+            int id = entry.getValue();
             if (pt != null) {
-                int id = entry.getValue();
                 int[] arr = (int[]) idsField.get(pt);
                 arr[latestIdx] = id;
                 versionMap.put(id, pt);
                 count++;
+            } else {
+                versionMap.put(id, PacketType.Play.Client.TELEPORT_CONFIRM);
+                unmapped.add(entry.getKey() + "=" + id);
             }
+        }
+
+        for (int id = 0; id < 256; id++) {
+            versionMap.putIfAbsent(id, PacketType.Play.Client.TELEPORT_CONFIRM);
+        }
+
+        if (logger != null && !unmapped.isEmpty()) {
+            logger.info("Paquetes Serverbound 26.3 nuevos mapeados como passthrough: " + unmapped);
         }
         return count;
     }
-}
 
+    @SuppressWarnings("unchecked")
+    private static void ensureConfigurationFallbacks() {
+        try {
+            Field mapFieldS = PacketType.Configuration.Server.class.getDeclaredField("PACKET_TYPE_ID_MAP");
+            mapFieldS.setAccessible(true);
+            Map<Byte, Map<Integer, PacketTypeCommon>> mapS =
+                (Map<Byte, Map<Integer, PacketTypeCommon>>) mapFieldS.get(null);
+            for (Map<Integer, PacketTypeCommon> m : mapS.values()) {
+                for (int id = 0; id < 64; id++) {
+                    m.putIfAbsent(id, PacketType.Configuration.Server.CUSTOM_PAYLOAD);
+                }
+            }
+
+            Field mapFieldC = PacketType.Configuration.Client.class.getDeclaredField("PACKET_TYPE_ID_MAP");
+            mapFieldC.setAccessible(true);
+            Map<Byte, Map<Integer, PacketTypeCommon>> mapC =
+                (Map<Byte, Map<Integer, PacketTypeCommon>>) mapFieldC.get(null);
+            for (Map<Integer, PacketTypeCommon> m : mapC.values()) {
+                for (int id = 0; id < 64; id++) {
+                    m.putIfAbsent(id, PacketType.Configuration.Client.CUSTOM_PAYLOAD);
+                }
+            }
+        } catch (Throwable ignored) {}
+    }
+}
