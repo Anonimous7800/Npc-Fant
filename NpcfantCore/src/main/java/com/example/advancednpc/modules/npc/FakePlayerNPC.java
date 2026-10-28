@@ -2,6 +2,7 @@ package com.example.advancednpc.modules.npc;
 
 import com.example.advancednpc.modules.animation.NPCPose;
 import com.example.advancednpc.modules.equipment.NPCEquipment;
+import com.example.advancednpc.modules.hologram.HologramLine;
 import com.example.advancednpc.modules.skin.SkinData;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.manager.server.ServerVersion;
@@ -20,6 +21,7 @@ import com.github.retrooper.packetevents.util.Vector3d;
 import com.github.retrooper.packetevents.wrapper.play.server.*;
 import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -55,7 +57,7 @@ public class FakePlayerNPC {
 
     public FakePlayerNPC(UUID uuid, String name, Location location, Plugin plugin) {
         this.uuid     = uuid;
-        this.name     = ChatColor.translateAlternateColorCodes('&', name);
+        this.name     = HologramLine.colorize(name);
         this.location = location.clone();
         this.plugin   = plugin;
         this.entityId = NEXT_ENTITY_ID.getAndIncrement();
@@ -83,6 +85,7 @@ public class FakePlayerNPC {
 
             if (npcType == NPCType.PLAYER) {
                 sendAddToTabList(player);
+                sendHideNametagTeamPacket(player);
 
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
                     if (!player.isOnline() || !spawnedFor.contains(player.getUniqueId())) return;
@@ -186,6 +189,22 @@ public class FakePlayerNPC {
         }
     }
 
+    public void swingMainArm() {
+        playAnimation(WrapperPlayServerEntityAnimation.EntityAnimationType.SWING_MAIN_ARM);
+    }
+
+    public void playAnimation(WrapperPlayServerEntityAnimation.EntityAnimationType animationType) {
+        for (UUID uid : new HashSet<>(spawnedFor)) {
+            Player p = Bukkit.getPlayer(uid);
+            if (p == null || !p.isOnline()) continue;
+            try {
+                WrapperPlayServerEntityAnimation animPacket =
+                    new WrapperPlayServerEntityAnimation(entityId, animationType);
+                PacketEvents.getAPI().getPlayerManager().sendPacket(p, animPacket);
+            } catch (Exception ignored) {}
+        }
+    }
+
     public void teleport(Location newLocation) {
         this.location = newLocation.clone();
         for (UUID uid : new HashSet<>(spawnedFor)) {
@@ -239,7 +258,7 @@ public class FakePlayerNPC {
     }
 
     private String getSafeProfileName() {
-        String colored = ChatColor.translateAlternateColorCodes('&', name);
+        String colored = HologramLine.colorize(name);
         String stripped = ChatColor.stripColor(colored);
         if (stripped == null || stripped.trim().isEmpty()) {
             stripped = "NPC_" + (entityId % 10000);
@@ -249,6 +268,30 @@ public class FakePlayerNPC {
             stripped = stripped.substring(0, 16);
         }
         return stripped;
+    }
+
+    private void sendHideNametagTeamPacket(Player player) {
+        try {
+            String teamName = "npc_" + (entityId % 100000);
+            String profileName = getSafeProfileName();
+            WrapperPlayServerTeams.ScoreBoardTeamInfo teamInfo =
+                new WrapperPlayServerTeams.ScoreBoardTeamInfo(
+                    Component.empty(),
+                    Component.empty(),
+                    Component.empty(),
+                    WrapperPlayServerTeams.NameTagVisibility.NEVER,
+                    WrapperPlayServerTeams.CollisionRule.NEVER,
+                    NamedTextColor.WHITE,
+                    WrapperPlayServerTeams.OptionData.NONE
+                );
+            WrapperPlayServerTeams teamPacket = new WrapperPlayServerTeams(
+                teamName,
+                WrapperPlayServerTeams.TeamMode.CREATE,
+                teamInfo,
+                Collections.singletonList(profileName)
+            );
+            PacketEvents.getAPI().getPlayerManager().sendPacket(player, teamPacket);
+        } catch (Exception ignored) {}
     }
 
     private boolean hasValidSignedTexture() {
@@ -269,7 +312,7 @@ public class FakePlayerNPC {
         UserProfile profile = new UserProfile(uuid, profileName, textures);
 
         Component displayComponent = LegacyComponentSerializer.legacySection()
-            .deserialize(ChatColor.translateAlternateColorCodes('&', name));
+            .deserialize(HologramLine.colorize(name));
 
         EnumSet<WrapperPlayServerPlayerInfoUpdate.Action> actions = EnumSet.of(
             WrapperPlayServerPlayerInfoUpdate.Action.ADD_PLAYER,
@@ -329,13 +372,6 @@ public class FakePlayerNPC {
                 default          -> EntityPose.STANDING;
             };
             baseMetadata.add(new EntityData<>(6, EntityDataTypes.ENTITY_POSE, pePose));
-
-            if (npcType != NPCType.PLAYER && showNametag && name != null && !name.isEmpty()) {
-                Component customName = LegacyComponentSerializer.legacySection()
-                    .deserialize(ChatColor.translateAlternateColorCodes('&', name));
-                baseMetadata.add(new EntityData<>(2, EntityDataTypes.OPTIONAL_ADV_COMPONENT, Optional.of(customName)));
-                baseMetadata.add(new EntityData<>(3, EntityDataTypes.BOOLEAN, true));
-            }
 
             WrapperPlayServerEntityMetadata metaPacket =
                 new WrapperPlayServerEntityMetadata(entityId, baseMetadata);
@@ -459,7 +495,7 @@ public class FakePlayerNPC {
     public UUID     getUUID()      { return uuid; }
     public String   getName()      { return name; }
     public void     setName(String n) {
-        this.name = ChatColor.translateAlternateColorCodes('&', n);
+        this.name = HologramLine.colorize(n);
         respawnForAll();
     }
     public Location getLocation()  { return location.clone(); }

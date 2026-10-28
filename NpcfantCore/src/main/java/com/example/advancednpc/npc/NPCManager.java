@@ -3,6 +3,7 @@ package com.example.advancednpc.npc;
 import com.example.advancednpc.api.INPC;
 import com.example.advancednpc.api.INPCManager;
 import com.example.advancednpc.api.event.NPCInteractEvent;
+import com.example.advancednpc.modules.animation.NPCPose;
 import com.example.advancednpc.modules.hologram.Hologram;
 import com.example.advancednpc.modules.hologram.HologramManager;
 import com.example.advancednpc.modules.interaction.CooldownManager;
@@ -47,6 +48,7 @@ public class NPCManager implements INPCManager, Listener {
     private       NPCStorage      storage;
     private       BukkitTask      trackerTask;
     private       PacketListenerAbstract packetListener;
+    private       int             tickCounter = 0;
 
     private final Map<UUID, NPCEntity> npcs = new LinkedHashMap<>();
     private final Map<Integer, NPCEntity> entityIdMap = new ConcurrentHashMap<>();
@@ -117,10 +119,17 @@ public class NPCManager implements INPCManager, Listener {
             Collection<? extends Player> onlinePlayers = Bukkit.getOnlinePlayers();
             if (onlinePlayers.isEmpty() || npcs.isEmpty()) return;
 
+            tickCounter++;
+            boolean refreshHologramPlaceholders = (tickCounter % 10 == 0);
+
             for (NPCEntity npc : npcs.values()) {
                 if (!npc.isSpawned()) continue;
                 Location npcLoc = npc.getLocation();
                 if (npcLoc.getWorld() == null) continue;
+
+                Hologram holo = npc.getHologramId() != null
+                    ? hologramManager.getHologram(npc.getHologramId()).orElse(null)
+                    : null;
 
                 for (Player player : onlinePlayers) {
                     UUID pid = player.getUniqueId();
@@ -130,20 +139,72 @@ public class NPCManager implements INPCManager, Listener {
                         if (isSpawned) {
                             npc.getFakePlayer().despawnForPlayer(player);
                         }
+                        if (holo != null && holo.isSpawnedFor(pid)) {
+                            holo.despawnForPlayer(player);
+                        }
                         continue;
                     }
 
                     double distSq = player.getLocation().distanceSquared(npcLoc);
                     if (!isSpawned && distSq <= RENDER_DISTANCE_SQ) {
                         npc.getFakePlayer().spawnForPlayer(player);
+                        if (holo != null) holo.spawnForPlayer(player);
                     } else if (isSpawned && distSq > DESPAWN_DISTANCE_SQ) {
                         npc.getFakePlayer().despawnForPlayer(player);
-                    } else if (isSpawned && npc.isLookAtPlayer() && distSq <= LOOK_AT_DISTANCE_SQ) {
-                        npc.lookAtPlayer(player);
+                        if (holo != null) holo.despawnForPlayer(player);
+                    } else if (isSpawned) {
+                        if (holo != null && !holo.isSpawnedFor(pid)) {
+                            holo.spawnForPlayer(player);
+                        } else if (holo != null && refreshHologramPlaceholders) {
+                            holo.updateTextsForPlayer(player);
+                        }
+                        if (npc.isLookAtPlayer() && distSq <= LOOK_AT_DISTANCE_SQ) {
+                            npc.lookAtPlayer(player);
+                        }
                     }
                 }
             }
         }, 10L, 4L);
+    }
+
+    public Location getHologramBaseLocation(NPCEntity entity) {
+        NPCPose pose = entity.getPose();
+        double yOffset = switch (pose) {
+            case SNEAKING           -> 1.75;
+            case SITTING            -> 1.50;
+            case SLEEPING, SWIMMING -> 0.70;
+            default                 -> 2.05;
+        };
+        return entity.getLocation().clone().add(0, yOffset, 0);
+    }
+
+    public void syncHologram(NPCEntity entity) {
+        if (entity == null) return;
+        List<String> combinedLines = new ArrayList<>();
+        if (entity.isShowNametag() && entity.getName() != null && !entity.getName().isEmpty()) {
+            combinedLines.add(entity.getName());
+        }
+        if (entity.getHologramLines() != null && !entity.getHologramLines().isEmpty()) {
+            combinedLines.addAll(entity.getHologramLines());
+        }
+
+        if (combinedLines.isEmpty()) {
+            if (entity.getHologramId() != null) {
+                hologramManager.removeHologram(entity.getHologramId());
+                entity.setHologramId(null);
+            }
+            return;
+        }
+
+        Location holLoc = getHologramBaseLocation(entity);
+        if (entity.getHologramId() != null && hologramManager.getHologram(entity.getHologramId()).isPresent()) {
+            Hologram h = hologramManager.getHologram(entity.getHologramId()).get();
+            h.move(holLoc);
+            h.setAllLines(combinedLines);
+        } else {
+            Hologram h = hologramManager.createHologram(holLoc, combinedLines.toArray(new String[0]));
+            entity.setHologramId(h.getId());
+        }
     }
 
     @Override
@@ -158,9 +219,13 @@ public class NPCManager implements INPCManager, Listener {
 
         npcs.put(id, entity);
         entityIdMap.put(entity.getFakePlayer().getEntityId(), entity);
+        syncHologram(entity);
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             entity.getFakePlayer().spawnForAll();
+            if (entity.getHologramId() != null) {
+                hologramManager.getHologram(entity.getHologramId()).ifPresent(Hologram::refresh);
+            }
         }, 2L);
 
         if (storage != null) storage.save(entity);
@@ -226,6 +291,10 @@ public class NPCManager implements INPCManager, Listener {
                         && npc.getLocation().getWorld().equals(player.getWorld())
                         && npc.getLocation().distanceSquared(player.getLocation()) <= RENDER_DISTANCE_SQ) {
                     npc.getFakePlayer().spawnForPlayer(player);
+                    if (npc.getHologramId() != null) {
+                        hologramManager.getHologram(npc.getHologramId())
+                            .ifPresent(h -> h.spawnForPlayer(player));
+                    }
                 }
             }
         }, 15L);
@@ -236,24 +305,34 @@ public class NPCManager implements INPCManager, Listener {
         UUID uid = e.getPlayer().getUniqueId();
         for (NPCEntity npc : npcs.values()) {
             npc.getFakePlayer().removePlayerFromTracking(uid);
+            if (npc.getHologramId() != null) {
+                hologramManager.getHologram(npc.getHologramId())
+                    .ifPresent(h -> h.removePlayerFromTracking(uid));
+            }
         }
     }
 
     @EventHandler
     public void onPlayerChangedWorld(PlayerChangedWorldEvent e) {
-        Player player = e.getPlayer();
-        UUID uid = player.getUniqueId();
+        UUID uid = e.getPlayer().getUniqueId();
         for (NPCEntity npc : npcs.values()) {
             npc.getFakePlayer().removePlayerFromTracking(uid);
+            if (npc.getHologramId() != null) {
+                hologramManager.getHologram(npc.getHologramId())
+                    .ifPresent(h -> h.removePlayerFromTracking(uid));
+            }
         }
     }
 
     @EventHandler
     public void onPlayerRespawn(PlayerRespawnEvent e) {
-        Player player = e.getPlayer();
-        UUID uid = player.getUniqueId();
+        UUID uid = e.getPlayer().getUniqueId();
         for (NPCEntity npc : npcs.values()) {
             npc.getFakePlayer().removePlayerFromTracking(uid);
+            if (npc.getHologramId() != null) {
+                hologramManager.getHologram(npc.getHologramId())
+                    .ifPresent(h -> h.removePlayerFromTracking(uid));
+            }
         }
     }
 
@@ -309,8 +388,9 @@ public class NPCManager implements INPCManager, Listener {
             cloned.setSkin(sd.getValue(), sd.getSignature());
         }
         if (original.getHologramLines() != null && !original.getHologramLines().isEmpty()) {
-            attachHologram(cloned.getId(), original.getHologramLines().toArray(new String[0]));
+            cloned.setHologramLines(new ArrayList<>(original.getHologramLines()));
         }
+        syncHologram(cloned);
         if (storage != null) storage.save(cloned);
         return cloned;
     }
@@ -319,11 +399,7 @@ public class NPCManager implements INPCManager, Listener {
         NPCEntity entity = npcs.get(id);
         if (entity == null) return;
         entity.teleport(newLocation);
-
-        if (entity.getHologramId() != null) {
-            hologramManager.getHologram(entity.getHologramId())
-                .ifPresent(h -> h.move(newLocation.clone().add(0, 2.2, 0)));
-        }
+        syncHologram(entity);
         if (storage != null) storage.save(entity);
     }
 
@@ -360,27 +436,23 @@ public class NPCManager implements INPCManager, Listener {
         NPCEntity entity = npcs.get(npcId);
         if (entity == null) return null;
 
-        Location holLoc = entity.getLocation().clone().add(0, 2.2, 0);
+        List<String> extraLines = new ArrayList<>(entity.getHologramLines());
+        Collections.addAll(extraLines, lines);
+        entity.setHologramLines(extraLines);
+        syncHologram(entity);
 
-        Hologram h;
-        if (entity.getHologramId() != null && hologramManager.getHologram(entity.getHologramId()).isPresent()) {
-            h = hologramManager.getHologram(entity.getHologramId()).get();
-            for (String line : lines) {
-                h.addLine(line);
-            }
-        } else {
-            h = hologramManager.createHologram(holLoc, lines);
-            entity.setHologramId(h.getId());
-        }
-
-        entity.setHologramLines(h.getLines());
         if (storage != null) storage.save(entity);
-        return h;
+        return entity.getHologramId() != null
+            ? hologramManager.getHologram(entity.getHologramId()).orElse(null)
+            : null;
     }
 
     public void saveNPC(NPCEntity entity) {
-        if (storage != null && entity != null) {
-            storage.save(entity);
+        if (entity != null) {
+            syncHologram(entity);
+            if (storage != null) {
+                storage.save(entity);
+            }
         }
     }
 
@@ -390,19 +462,15 @@ public class NPCManager implements INPCManager, Listener {
         for (NPCEntity entity : loaded) {
             npcs.put(entity.getId(), entity);
             entityIdMap.put(entity.getFakePlayer().getEntityId(), entity);
+            syncHologram(entity);
         }
         plugin.getLogger().info("[NpcFant] " + loaded.size() + " NPC(s) cargados desde el almacenamiento.");
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             for (NPCEntity entity : npcs.values()) {
                 entity.getFakePlayer().spawnForAll();
-
-                if (entity.getHologramLines() != null && !entity.getHologramLines().isEmpty()
-                        && entity.getHologramId() == null) {
-                    Hologram h = hologramManager.createHologram(
-                        entity.getLocation().clone().add(0, 2.2, 0),
-                        entity.getHologramLines().toArray(new String[0]));
-                    entity.setHologramId(h.getId());
+                if (entity.getHologramId() != null) {
+                    hologramManager.getHologram(entity.getHologramId()).ifPresent(Hologram::refresh);
                 }
             }
         }, 20L);

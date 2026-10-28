@@ -45,7 +45,7 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
         "create", "remove", "clone", "move", "tp",
         "skin", "name", "hologram", "pose", "equip",
         "glow", "invisible", "action", "visible", "reload",
-        "list", "info", "copy", "look"
+        "list", "info", "copy", "look", "animate", "nametag"
     );
 
     @Override
@@ -271,6 +271,47 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
                 } else {
                     player.sendMessage(getPrefix() + ChatColor.RED + "NPC no encontrado.");
                 }
+                break;
+            }
+
+            case "nametag": {
+                if (args.length < 2) {
+                    player.sendMessage(getPrefix() + ChatColor.RED + "Uso: /npcfant nametag <uuid|nombre|nearest>");
+                    return true;
+                }
+                Optional<NPCEntity> target = npcManager.resolveNPC(args[1], player);
+                if (target.isPresent()) {
+                    NPCEntity nNpc = target.get();
+                    nNpc.setShowNametag(!nNpc.isShowNametag());
+                    npcManager.saveNPC(nNpc);
+                    player.sendMessage(getPrefix() + ChatColor.GREEN + "Nametag del NPC: " + (nNpc.isShowNametag() ? "visible" : "oculto") + ".");
+                } else {
+                    player.sendMessage(getPrefix() + ChatColor.RED + "NPC no encontrado.");
+                }
+                break;
+            }
+
+            case "animate": {
+                if (args.length < 2) {
+                    player.sendMessage(getPrefix() + ChatColor.RED + "Uso: /npcfant animate <uuid|nombre|nearest> [swing|crit|magic|damage]");
+                    return true;
+                }
+                Optional<NPCEntity> target = npcManager.resolveNPC(args[1], player);
+                if (target.isEmpty()) {
+                    player.sendMessage(getPrefix() + ChatColor.RED + "NPC no encontrado.");
+                    return true;
+                }
+                String anim = args.length >= 3 ? args[2].toLowerCase() : "swing";
+                var animTypes = com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityAnimation.EntityAnimationType.values();
+                var peAnim = switch (anim) {
+                    case "offhand" -> com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityAnimation.EntityAnimationType.SWING_OFF_HAND;
+                    case "damage", "hurt" -> com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityAnimation.EntityAnimationType.HURT;
+                    case "crit"    -> animTypes.length > 4 ? animTypes[4] : com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityAnimation.EntityAnimationType.SWING_MAIN_ARM;
+                    case "magic"   -> animTypes.length > 5 ? animTypes[5] : com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityAnimation.EntityAnimationType.SWING_MAIN_ARM;
+                    default        -> com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityAnimation.EntityAnimationType.SWING_MAIN_ARM;
+                };
+                target.get().getFakePlayer().playAnimation(peAnim);
+                player.sendMessage(getPrefix() + ChatColor.GREEN + "Animación '" + anim + "' ejecutada.");
                 break;
             }
 
@@ -534,22 +575,64 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
             case "set":
             case "edit": {
                 if (args.length < 5) {
-                    player.sendMessage(getPrefix() + ChatColor.RED + "Uso: /npcfant hologram <npc> set <línea> <texto>");
-                    return;
-                }
-                if (npc.getHologramId() == null) {
-                    player.sendMessage(getPrefix() + ChatColor.RED + "Este NPC no tiene un holograma activo.");
+                    player.sendMessage(getPrefix() + ChatColor.RED + "Uso: /npcfant hologram <npc> set <índice> <texto>");
                     return;
                 }
                 try {
                     int lineIdx = Integer.parseInt(args[3]);
                     String newText = String.join(" ", Arrays.copyOfRange(args, 4, args.length));
-                    plugin.getHologramManager().getHologram(npc.getHologramId()).ifPresentOrElse(holo -> {
-                        holo.setLine(lineIdx, newText);
-                        npc.setHologramLines(holo.getLines());
-                        npcManager.saveNPC(npc);
-                        player.sendMessage(getPrefix() + ChatColor.GREEN + "Línea #" + lineIdx + " actualizada.");
-                    }, () -> player.sendMessage(getPrefix() + ChatColor.RED + "Holograma no encontrado."));
+                    List<String> extraLines = new ArrayList<>(npc.getHologramLines());
+                    if (lineIdx < 0 || lineIdx >= extraLines.size()) {
+                        player.sendMessage(getPrefix() + ChatColor.RED + "Índice fuera de rango (0 - " + Math.max(0, extraLines.size() - 1) + ").");
+                        return;
+                    }
+                    extraLines.set(lineIdx, newText);
+                    npc.setHologramLines(extraLines);
+                    npcManager.saveNPC(npc);
+                    player.sendMessage(getPrefix() + ChatColor.GREEN + "Línea #" + lineIdx + " actualizada.");
+                } catch (NumberFormatException e) {
+                    player.sendMessage(getPrefix() + ChatColor.RED + "Número de línea inválido.");
+                }
+                break;
+            }
+
+            case "insert": {
+                if (args.length < 5) {
+                    player.sendMessage(getPrefix() + ChatColor.RED + "Uso: /npcfant hologram <npc> insert <índice> <texto>");
+                    return;
+                }
+                try {
+                    int lineIdx = Integer.parseInt(args[3]);
+                    String newText = String.join(" ", Arrays.copyOfRange(args, 4, args.length));
+                    List<String> extraLines = new ArrayList<>(npc.getHologramLines());
+                    int safeIdx = Math.max(0, Math.min(lineIdx, extraLines.size()));
+                    extraLines.add(safeIdx, newText);
+                    npc.setHologramLines(extraLines);
+                    npcManager.saveNPC(npc);
+                    player.sendMessage(getPrefix() + ChatColor.GREEN + "Línea insertada en posición #" + safeIdx + ".");
+                } catch (NumberFormatException e) {
+                    player.sendMessage(getPrefix() + ChatColor.RED + "Número de línea inválido.");
+                }
+                break;
+            }
+
+            case "removeline":
+            case "del": {
+                if (args.length < 4) {
+                    player.sendMessage(getPrefix() + ChatColor.RED + "Uso: /npcfant hologram <npc> removeline <índice>");
+                    return;
+                }
+                try {
+                    int lineIdx = Integer.parseInt(args[3]);
+                    List<String> extraLines = new ArrayList<>(npc.getHologramLines());
+                    if (lineIdx < 0 || lineIdx >= extraLines.size()) {
+                        player.sendMessage(getPrefix() + ChatColor.RED + "Índice fuera de rango.");
+                        return;
+                    }
+                    extraLines.remove(lineIdx);
+                    npc.setHologramLines(extraLines);
+                    npcManager.saveNPC(npc);
+                    player.sendMessage(getPrefix() + ChatColor.GREEN + "Línea #" + lineIdx + " eliminada.");
                 } catch (NumberFormatException e) {
                     player.sendMessage(getPrefix() + ChatColor.RED + "Número de línea inválido.");
                 }
@@ -558,38 +641,28 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
 
             case "remove":
             case "clear": {
-                if (npc.getHologramId() != null) {
-                    plugin.getHologramManager().removeHologram(npc.getHologramId());
-                    npc.setHologramId(null);
-                    npc.setHologramLines(Collections.emptyList());
-                    npcManager.saveNPC(npc);
-                    player.sendMessage(getPrefix() + ChatColor.GREEN + "Holograma eliminado.");
-                } else {
-                    player.sendMessage(getPrefix() + ChatColor.RED + "Este NPC no tiene un holograma activo.");
-                }
+                npc.setHologramLines(Collections.emptyList());
+                npcManager.saveNPC(npc);
+                player.sendMessage(getPrefix() + ChatColor.GREEN + "Líneas adicionales del holograma eliminadas.");
                 break;
             }
 
             case "list": {
-                if (npc.getHologramId() == null) {
-                    player.sendMessage(getPrefix() + ChatColor.YELLOW + "Este NPC no tiene un holograma activo.");
-                    return;
+                List<String> lines = npc.getHologramLines();
+                player.sendMessage(getPrefix() + ChatColor.GOLD + "Holograma de " + ChatColor.WHITE + npc.getName() + ChatColor.GOLD + ":");
+                player.sendMessage(ChatColor.GRAY + "  [Nametag]: " + (npc.isShowNametag() ? ChatColor.WHITE + npc.getName() : ChatColor.RED + "Oculto"));
+                if (lines.isEmpty()) {
+                    player.sendMessage(ChatColor.YELLOW + "  (Sin líneas adicionales. Usa /npcfant hologram <npc> add <texto>)");
+                } else {
+                    for (int i = 0; i < lines.size(); i++) {
+                        player.sendMessage(ChatColor.GRAY + "  " + i + ": " + ChatColor.WHITE + lines.get(i));
+                    }
                 }
-                plugin.getHologramManager().getHologram(npc.getHologramId()).ifPresentOrElse(
-                    holo -> {
-                        player.sendMessage(getPrefix() + ChatColor.GOLD + "Líneas del holograma:");
-                        List<String> lines = holo.getLines();
-                        for (int i = 0; i < lines.size(); i++) {
-                            player.sendMessage(ChatColor.GRAY + "  " + i + ": " + ChatColor.WHITE + lines.get(i));
-                        }
-                    },
-                    () -> player.sendMessage(getPrefix() + ChatColor.RED + "Holograma no encontrado.")
-                );
                 break;
             }
 
             default:
-                player.sendMessage(getPrefix() + ChatColor.RED + "Subcomando inválido: add | set | remove | list");
+                player.sendMessage(getPrefix() + ChatColor.RED + "Subcomando inválido: add | set | insert | removeline | clear | list");
         }
     }
 
@@ -602,8 +675,10 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
         player.sendMessage(ChatColor.YELLOW + "/npcfant tp <npc>"                   + ChatColor.GRAY + " — Te teletransporta al NPC");
         player.sendMessage(ChatColor.YELLOW + "/npcfant skin <npc> <tipo> <valor>"  + ChatColor.GRAY + " — Cambia la skin");
         player.sendMessage(ChatColor.YELLOW + "/npcfant name <npc> <nombre>"        + ChatColor.GRAY + " — Cambia el nombre");
+        player.sendMessage(ChatColor.YELLOW + "/npcfant nametag <npc>"              + ChatColor.GRAY + " — Alterna mostrar nametag");
         player.sendMessage(ChatColor.YELLOW + "/npcfant hologram <npc> <sub>"       + ChatColor.GRAY + " — Gestiona hologramas");
         player.sendMessage(ChatColor.YELLOW + "/npcfant pose <npc> <pose>"          + ChatColor.GRAY + " — Cambia la pose");
+        player.sendMessage(ChatColor.YELLOW + "/npcfant animate <npc> [anim]"       + ChatColor.GRAY + " — Reproduce una animación");
         player.sendMessage(ChatColor.YELLOW + "/npcfant equip <npc> <slot>"         + ChatColor.GRAY + " — Equipa el ítem en tu mano");
         player.sendMessage(ChatColor.YELLOW + "/npcfant glow <npc> <color|off>"     + ChatColor.GRAY + " — Activa/desactiva glow");
         player.sendMessage(ChatColor.YELLOW + "/npcfant invisible <npc>"            + ChatColor.GRAY + " — Alterna invisibilidad");
@@ -650,7 +725,9 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
                     return Arrays.asList("username", "file", "preset");
                 case "hologram":
                 case "holo":
-                    return Arrays.asList("add", "set", "remove", "list");
+                    return Arrays.asList("add", "set", "insert", "removeline", "clear", "list");
+                case "animate":
+                    return Arrays.asList("swing", "offhand", "crit", "magic", "damage");
                 case "equip":
                     return Arrays.asList("helmet", "chestplate", "leggings", "boots", "mainhand", "offhand", "clear");
                 case "action":
