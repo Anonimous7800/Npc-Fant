@@ -42,7 +42,7 @@ jobs:
           name: Npcfant-2.0
           path: NpcfantCore/target/Npcfant-2.0.jar
 
-      - name: Send Detailed Changelog & Build Report to Discord
+      - name: Send Minecraft-Style Changelog Report to Discord
         if: always()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
@@ -56,86 +56,103 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           WEBHOOK_URL="${DISCORD_WEBHOOK:-$DEFAULT_WEBHOOK}"
-
-          COMMIT_MSG=$(git log -1 --pretty=format:"%s" | cut -c 1-250)
-          CHANGED_FILES=$(git show --name-status --pretty="" HEAD | head -n 15 | sed 's/\t/  /g')
-          TOTAL_CHANGED=$(git show --name-only --pretty="" HEAD | wc -l | tr -d ' ')
+          SHORT_SHA="${COMMIT_SHA:0:7}"
+          COMMIT_TITLE=$(git log -1 --pretty=format:"%s")
           DIFF_STATS=$(git show --stat --pretty="" HEAD | tail -n 1 | sed 's/^ *//')
+          [ -z "$DIFF_STATS" ] && DIFF_STATS="No file changes recorded"
 
-          if [ -z "$CHANGED_FILES" ]; then
-            CHANGED_FILES="Sin archivos modificados en este commit"
-          elif [ "$TOTAL_CHANGED" -gt 15 ]; then
-            EXTRA=$((TOTAL_CHANGED - 15))
-            CHANGED_FILES=$(printf "%s\n... y %d archivo(s) más" "$CHANGED_FILES" "$EXTRA")
+          ADDED_LIST=$(git show --name-status --pretty="" HEAD | awk '$1 == "A" {print "  - Added `" $2 "`"}' | head -n 6)
+          MODIFIED_LIST=$(git show --name-status --pretty="" HEAD | awk '$1 == "M" {print "  - Updated `" $2 "`"}' | head -n 8)
+          DELETED_LIST=$(git show --name-status --pretty="" HEAD | awk '$1 == "D" {print "  - Removed `" $2 "`"}' | head -n 4)
+
+          FILE_BULLETS=""
+          if [ -n "$ADDED_LIST" ]; then
+            FILE_BULLETS=$(printf "%s\n- Added new project files\n%s" "$FILE_BULLETS" "$ADDED_LIST")
           fi
-
-          if [ -z "$DIFF_STATS" ]; then
-            DIFF_STATS="0 files changed"
+          if [ -n "$MODIFIED_LIST" ]; then
+            FILE_BULLETS=$(printf "%s\n- Updated existing source & configuration files\n%s" "$FILE_BULLETS" "$MODIFIED_LIST")
+          fi
+          if [ -n "$DELETED_LIST" ]; then
+            FILE_BULLETS=$(printf "%s\n- Cleaned up obsolete files\n%s" "$FILE_BULLETS" "$DELETED_LIST")
+          fi
+          if [ -z "$FILE_BULLETS" ]; then
+            FILE_BULLETS="- Synchronized repository state"
           fi
 
           if [ "$BUILD_OUTCOME" == "success" ]; then
-            STATUS_TITLE="✅ Build & Cambios Aplicados — Npc-Fant"
-            COLOR=3066993
             JAR_SIZE="N/A"
             if [ -f "NpcfantCore/target/Npcfant-2.0.jar" ]; then
               JAR_SIZE=$(du -h "NpcfantCore/target/Npcfant-2.0.jar" | cut -f1)
             fi
-            BUILD_SUMMARY="Compilación exitosa de los **23 módulos** (JDK 17).\n📦 Artefacto generado: \`Npcfant-2.0.jar\` (${JAR_SIZE})\n🔗 [Ver Build en GitHub](${RUN_URL}) • [Ver Commit](${COMMIT_URL})"
-            DETAILS_NAME="💡 Estado y Recomendaciones"
-            DETAILS_VALUE="• Todos los adaptadores NMS (\`v1_17_R1\` – \`v26_3_R1\`) y \`NpcfantCore\` compilaron sin errores.\n• Listo para descargar desde GitHub Actions Artifacts o desplegar en el servidor."
+
+            REPORT_CONTENT=$(cat <<EOF
+          # Npc-Fant Build/Preview 2.0.${GITHUB_RUN_NUMBER} (${SHORT_SHA})
+          -# ${COMMIT_URL}
+          ## Update Summary & Applied Changes
+          __**Commit Details**__
+          - ${COMMIT_TITLE}
+            - Author: \`${COMMIT_ACTOR}\`
+            - Branch: \`${BRANCH_NAME}\`
+            - Stats: ${DIFF_STATS}
+          __**Modified Files**__
+          ${FILE_BULLETS}
+          __**Maven Build & Artifacts**__
+          - Compiled all 23 modules successfully with Java 17
+            - Shaded Plugin JAR: \`Npcfant-2.0.jar\` (${JAR_SIZE})
+            - Version Adapters: \`v1_17_R1\` through \`v26_3_R1\` ready
+            - CI Run: ${RUN_URL}
+          ## Features and Bug Fixes
+          __**NPC Engine & Packets**__
+          - Packet-based \`FakePlayerNPC\` and multi-entity spawning (1.17 – 26.3)
+            - Safe 16-character profile sanitization with full color display names
+            - Dynamic distance tracker (auto-spawn within 60 blocks, auto-despawn beyond 68 blocks)
+            - Automatic head and body rotation towards nearby players
+          __**Customization & Gameplay**__
+          - Real-time equipment packets (\`helmet\`, \`chestplate\`, \`leggings\`, \`boots\`, \`mainhand\`, \`offhand\`)
+          - Live posture updates (\`STANDING\`, \`SNEAKING\`, \`SITTING\`, \`SLEEPING\`, \`SWIMMING\`)
+          - Asynchronous skin fetching (\`username\`, \`preset\`, \`file\`) and interactive \`/skingui\` menu
+          - Integrated multi-line floating holograms and packet click action chains
+
+          ...And many more!
+          Discuss these changes in the official Discord channel here: https://discord.com/channels/1132409994793451714/1449152297753116754
+          https://github.com/Anonimous7800/Npc-Fant
+          EOF
+          )
           else
-            STATUS_TITLE="❌ Error en Build de Maven — Npc-Fant"
-            COLOR=15158332
-            BUILD_SUMMARY="Falló la compilación en **${REPO_NAME}** (rama \`${BRANCH_NAME}\`).\n🔗 [Ver Build en GitHub](${RUN_URL}) • [Ver Commit](${COMMIT_URL})"
-            ERROR_LOGS=$(grep -E "\[ERROR\]" build.log | tail -n 12 || true)
-            if [ -z "$ERROR_LOGS" ]; then
-              ERROR_LOGS=$(tail -n 12 build.log || true)
+            ERROR_LINES=$(grep -E "\[ERROR\]" build.log | sed 's/\[ERROR\] /  - /g' | head -n 10 || true)
+            if [ -z "$ERROR_LINES" ]; then
+              ERROR_LINES=$(tail -n 10 build.log | sed 's/^/  - /g' || true)
             fi
-            ERROR_LOGS=$(printf "%s" "$ERROR_LOGS" | cut -c 1-950)
-            DETAILS_NAME="🚨 Errores de Compilación Detectados"
-            DETAILS_VALUE=$(printf "\`\`\`\n%s\n\`\`\`" "$ERROR_LOGS")
+
+            REPORT_CONTENT=$(cat <<EOF
+          # Npc-Fant Build/Preview 2.0.${GITHUB_RUN_NUMBER} — FAILED (${SHORT_SHA})
+          -# ${RUN_URL}
+          ## Build Failure Report
+          __**Commit Details**__
+          - ${COMMIT_TITLE}
+            - Author: \`${COMMIT_ACTOR}\`
+            - Branch: \`${BRANCH_NAME}\`
+            - Stats: ${DIFF_STATS}
+          __**Modified Files**__
+          ${FILE_BULLETS}
+          __**Compiler & Maven Errors**__
+          - Maven build exited with errors during CI execution:
+          ${ERROR_LINES}
+
+          Check the full build log and discuss fixes here: https://discord.com/channels/1132409994793451714/1449152297753116754
+          ${RUN_URL}
+          EOF
+          )
           fi
 
-          FILES_BLOCK=$(printf "\`\`\`\n%s\n\`\`\`\n📊 **Resumen:** %s" "$CHANGED_FILES" "$DIFF_STATS")
+          REPORT_CONTENT=$(printf "%s" "$REPORT_CONTENT" | sed 's/^          //')
+          REPORT_CONTENT=$(printf "%s" "$REPORT_CONTENT" | cut -c 1-1950)
 
           jq -n \
-            --arg title "$STATUS_TITLE" \
-            --arg desc "$BUILD_SUMMARY" \
-            --arg commit_msg "$COMMIT_MSG" \
-            --arg files_block "$FILES_BLOCK" \
-            --arg details_name "$DETAILS_NAME" \
-            --arg details_val "$DETAILS_VALUE" \
-            --arg actor "$COMMIT_ACTOR" \
-            --arg branch "$BRANCH_NAME" \
-            --arg sha "${COMMIT_SHA:0:7}" \
-            --argjson color "$COLOR" \
+            --arg content "$REPORT_CONTENT" \
             '{
-              username: "NpcFant CI Bot",
-              embeds: [{
-                title: $title,
-                description: $desc,
-                color: $color,
-                fields: [
-                  {
-                    name: "📝 Cambio Aplicado (Commit)",
-                    value: ("`" + $sha + "` — " + $commit_msg),
-                    inline: false
-                  },
-                  {
-                    name: "📂 Archivos Modificados (A = Añadido, M = Modificado, D = Eliminado)",
-                    value: $files_block,
-                    inline: false
-                  },
-                  {
-                    name: $details_name,
-                    value: $details_val,
-                    inline: false
-                  }
-                ],
-                footer: {
-                  text: ("Autor: " + $actor + " • Rama: " + $branch + " • Commit: " + $sha)
-                }
-              }]
+              username: "NpcFant Changelog",
+              content: $content
             }' > payload.json
 
           curl -sS -H "Content-Type: application/json" -X POST -d @payload.json "$WEBHOOK_URL" || true
