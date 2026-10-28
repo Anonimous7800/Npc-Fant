@@ -67,8 +67,8 @@ jobs:
             DIFF_STATS="No file changes recorded"
           fi
 
-          ADDED_LIST=$(git show --name-status --pretty="" HEAD | awk '$1 == "A" {print "  - Added `" $2 "`"}' | head -n 6)
-          MODIFIED_LIST=$(git show --name-status --pretty="" HEAD | awk '$1 == "M" {print "  - Updated `" $2 "`"}' | head -n 8)
+          ADDED_LIST=$(git show --name-status --pretty="" HEAD | awk '$1 == "A" {print "  - Added `" $2 "`"}' | head -n 5)
+          MODIFIED_LIST=$(git show --name-status --pretty="" HEAD | awk '$1 == "M" {print "  - Updated `" $2 "`"}' | head -n 6)
           DELETED_LIST=$(git show --name-status --pretty="" HEAD | awk '$1 == "D" {print "  - Removed `" $2 "`"}' | head -n 4)
 
           FILE_BULLETS=""
@@ -92,19 +92,19 @@ jobs:
               JAR_SIZE=$(du -h "NpcfantCore/target/Npcfant-2.0.jar" | cut -f1)
             fi
 
-            REPORT_CONTENT=$(printf "# Npc-Fant Build/Preview 2.0.%s (%s)\n-# %s\n## Update Summary & Applied Changes\n__**Commit Details**__\n- %s\n  - Author: \`%s\`\n  - Branch: \`%s\`\n  - Stats: %s\n__**Modified Files**__\n%s\n__**Maven Build & Artifacts**__\n- Compiled all 23 modules successfully with Java 17\n  - Shaded Plugin JAR: \`Npcfant-2.0.jar\` (%s)\n  - Version Adapters: \`v1_17_R1\` through \`v26_3_R1\` ready\n  - CI Run: %s\n## Features and Bug Fixes\n__**NPC Engine & Packets**__\n- Packet-based \`FakePlayerNPC\` and multi-entity spawning (1.17 – 26.3)\n  - Safe 16-character profile sanitization with full color display names\n  - Dynamic distance tracker (auto-spawn within 60 blocks, auto-despawn beyond 68 blocks)\n  - Automatic head and body rotation towards nearby players\n__**Customization & Gameplay**__\n- Real-time equipment packets (\`helmet\`, \`chestplate\`, \`leggings\`, \`boots\`, \`mainhand\`, \`offhand\`)\n- Live posture updates (\`STANDING\`, \`SNEAKING\`, \`SITTING\`, \`SLEEPING\`, \`SWIMMING\`)\n- Asynchronous skin fetching (\`username\`, \`preset\`, \`file\`) and interactive \`/skingui\` menu\n- Integrated multi-line floating holograms and packet click action chains\n\n...And many more!\nDiscuss these changes in the official Discord channel here: https://discord.com/channels/1132409994793451714/1449152297753116754\nhttps://github.com/Anonimous7800/Npc-Fant" \
+            REPORT_CONTENT=$(printf "# Npc-Fant Build/Preview 2.0.%s (%s)\n-# %s\n## Update Summary & Applied Changes\n__**Commit Details**__\n- %s\n  - Author: \`%s\` | Branch: \`%s\`\n  - Stats: %s\n__**Modified Files**__\n%s\n__**Maven Build & Artifacts**__\n- Compiled all 23 modules with Java 17 (\`Npcfant-2.0.jar\` — %s)\n  - CI Run: %s\n## Features and Bug Fixes\n__**Holograms & Virtual Entities**__\n- 100%% packet-based virtual ArmorStands via PacketEvents (zero world entities)\n- Full Hex color (\`&#RRGGBB\`), per-player variables, and PlaceholderAPI support\n__**NPCs & Animations**__\n- Hidden 16-char native nametag via Scoreboard Team packets in favor of full-length Hologram nametags\n- Dynamic pose height adjustment and \`/npcfant animate\` packet animations\n\n...And many more!\nDiscuss these changes here: https://discord.com/channels/1132409994793451714/1449152297753116754\nhttps://github.com/Anonimous7800/Npc-Fant" \
               "$RUN_NUM" "$SHORT_SHA" "$COMMIT_URL" "$COMMIT_TITLE" "$COMMIT_ACTOR" "$BRANCH_NAME" "$DIFF_STATS" "$FILE_BULLETS" "$JAR_SIZE" "$RUN_URL")
           else
-            ERROR_LINES=$(grep -E "\[ERROR\]" build.log | sed 's/\[ERROR\] /  - /g' | head -n 10 || true)
+            ERROR_LINES=$(grep -E "\[ERROR\]" build.log | sed 's/\[ERROR\] /  - /g' | head -n 8 || true)
             if [ -z "$ERROR_LINES" ]; then
-              ERROR_LINES=$(tail -n 10 build.log | sed 's/^/  - /g' || true)
+              ERROR_LINES=$(tail -n 8 build.log | sed 's/^/  - /g' || true)
             fi
 
-            REPORT_CONTENT=$(printf "# Npc-Fant Build/Preview 2.0.%s — FAILED (%s)\n-# %s\n## Build Failure Report\n__**Commit Details**__\n- %s\n  - Author: \`%s\`\n  - Branch: \`%s\`\n  - Stats: %s\n__**Modified Files**__\n%s\n__**Compiler & Maven Errors**__\n- Maven build exited with errors during CI execution:\n%s\n\nCheck the full build log and discuss fixes here: https://discord.com/channels/1132409994793451714/1449152297753116754\n%s" \
+            REPORT_CONTENT=$(printf "# Npc-Fant Build/Preview 2.0.%s — FAILED (%s)\n-# %s\n## Build Failure Report\n__**Commit Details**__\n- %s\n  - Author: \`%s\` | Branch: \`%s\`\n  - Stats: %s\n__**Modified Files**__\n%s\n__**Compiler & Maven Errors**__\n- Maven build exited with errors:\n%s\n\nCheck the full build log here: https://discord.com/channels/1132409994793451714/1449152297753116754\n%s" \
               "$RUN_NUM" "$SHORT_SHA" "$RUN_URL" "$COMMIT_TITLE" "$COMMIT_ACTOR" "$BRANCH_NAME" "$DIFF_STATS" "$FILE_BULLETS" "$ERROR_LINES" "$RUN_URL")
           fi
 
-          REPORT_CONTENT=$(printf "%s" "$REPORT_CONTENT" | cut -c 1-1950)
+          REPORT_CONTENT="${REPORT_CONTENT:0:1900}"
 
           jq -n \
             --arg content "$REPORT_CONTENT" \
