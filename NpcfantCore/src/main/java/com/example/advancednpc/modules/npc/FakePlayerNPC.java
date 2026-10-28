@@ -236,6 +236,12 @@ public class FakePlayerNPC {
         playAnimation(WrapperPlayServerEntityAnimation.EntityAnimationType.SWING_MAIN_ARM);
     }
 
+    public void waveArm() {
+        swingMainArm();
+        Bukkit.getScheduler().runTaskLater(plugin, this::swingMainArm, 4L);
+        Bukkit.getScheduler().runTaskLater(plugin, this::swingMainArm, 8L);
+    }
+
     public void swingOffHand() {
         playAnimation(WrapperPlayServerEntityAnimation.EntityAnimationType.SWING_OFF_HAND);
     }
@@ -246,9 +252,21 @@ public class FakePlayerNPC {
 
     public void bow() {
         setPose(NPCPose.SNEAKING);
+        for (UUID uid : new HashSet<>(spawnedFor)) {
+            Player p = Bukkit.getPlayer(uid);
+            if (p != null && p.isOnline()) {
+                sendRotationPackets(p, location.getYaw(), 25.0f);
+            }
+        }
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             setPose(NPCPose.STANDING);
-        }, 15L);
+            for (UUID uid : new HashSet<>(spawnedFor)) {
+                Player p = Bukkit.getPlayer(uid);
+                if (p != null && p.isOnline()) {
+                    sendRotationPackets(p, location.getYaw(), 0.0f);
+                }
+            }
+        }, 18L);
     }
 
     public void playHappyParticles() {

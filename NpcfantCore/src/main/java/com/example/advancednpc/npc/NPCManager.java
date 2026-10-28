@@ -37,9 +37,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class NPCManager implements INPCManager, Listener {
 
-    private static final double RENDER_DISTANCE_SQ   = 60.0 * 60.0;
-    private static final double DESPAWN_DISTANCE_SQ  = 68.0 * 68.0;
-    private static final double LOOK_AT_DISTANCE_SQ  = 12.0 * 12.0;
+    private static final double RENDER_DISTANCE_SQ   = 28.0 * 28.0;
+    private static final double DESPAWN_DISTANCE_SQ  = 32.0 * 32.0;
+    private static final double LOOK_AT_DISTANCE_SQ  = 16.0 * 16.0;
 
     private final JavaPlugin      plugin;
     private final HologramManager hologramManager;
@@ -179,9 +179,11 @@ public class NPCManager implements INPCManager, Listener {
                             npc.lookAtPlayer(player);
                         }
                         if (npc.isAutoWave()) {
-                            if (distSq <= 20.25) {
+                            if (distSq <= 25.0) {
                                 Set<UUID> waved = autoWavedPlayers.computeIfAbsent(npc.getId(), k -> ConcurrentHashMap.newKeySet());
                                 if (waved.add(pid)) {
+                                    npc.getFakePlayer().waveArm();
+                                } else if (tickCounter % 160 == 0) {
                                     npc.getFakePlayer().swingMainArm();
                                 }
                             } else if (distSq > 49.0) {

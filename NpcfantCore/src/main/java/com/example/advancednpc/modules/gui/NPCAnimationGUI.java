@@ -168,7 +168,7 @@ public class NPCAnimationGUI implements Listener {
 
         switch (action) {
             case "swing_main" -> {
-                npc.getFakePlayer().swingMainArm();
+                npc.getFakePlayer().waveArm();
                 player.sendMessage("§a[NpcFant] ¡" + npc.getName() + " §aestá saludando con la mano!");
             }
             case "swing_off" -> {

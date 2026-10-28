@@ -146,7 +146,7 @@ public class NPCStorage {
                 }
                 entity.setInvisible(invis);
                 entity.setLookAtPlayer(lookAt);
-                entity.setAutoWave(cfg.getBoolean(path + ".auto-wave", false));
+                entity.setAutoWave(cfg.getBoolean(path + ".auto-wave", true));
                 entity.setVisibleToAll(visAll);
                 entity.setHologramLines(holoLines);
 
