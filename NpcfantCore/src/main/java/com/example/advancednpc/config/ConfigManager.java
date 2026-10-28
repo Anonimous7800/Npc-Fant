@@ -64,6 +64,15 @@ public class ConfigManager {
         File assetsDir = new File(dataFolder, "assets");
         if (!assetsDir.exists()) assetsDir.mkdirs();
 
+        File logoDir = new File(dataFolder, "logo");
+        if (!logoDir.exists()) logoDir.mkdirs();
+        File logoFile = new File(logoDir, "logo.png");
+        if (!logoFile.exists()) {
+            try {
+                plugin.saveResource("logo/logo.png", false);
+            } catch (Exception ignored) {}
+        }
+
         this.config = YamlConfiguration.loadConfiguration(configFile);
         plugin.getLogger().info("[NpcFant] Configuración y carpetas inicializadas correctamente.");
     }

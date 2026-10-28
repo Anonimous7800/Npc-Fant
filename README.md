@@ -1,132 +1,91 @@
-<p align="center">
-  <img src="logo/logo.png" alt="NpcFant Logo" width="280" />
-</p>
+![logo](logo/logo.png)
 
-<h1 align="center">Npc-Fant (v2.0)</h1>
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Modrinth](https://img.shields.io/badge/Modrinth-npc--fant-00c853.svg)](https://modrinth.com/plugin/npc-fant)
+[![Minecraft](https://img.shields.io/badge/Minecraft-1.17--26.3-brightgreen.svg)](https://www.minecraft.net)
+[![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://www.java.com)
+[![Maven](https://img.shields.io/badge/Build-Maven-red.svg)](https://maven.apache.org/)
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Version-2.0.0-brightgreen" alt="Version" />
-  <img src="https://img.shields.io/badge/Minecraft-1.17%20--%2026.3-blue" alt="Minecraft" />
-  <img src="https://img.shields.io/badge/Java-17%2B-orange" alt="Java" />
-  <img src="https://img.shields.io/badge/License-MIT-purple" alt="License" />
-</p>
+NpcFant is a modernized and feature-rich packet-based NPC plugin for Minecraft servers, providing administrators and developers with powerful tools to create interactive virtual characters, custom skins, and floating holograms.
 
-**Npc-Fant** es un plugin avanzado de NPCs para servidores de Minecraft (Spigot, Paper, Purpur y forks) basado en paquetes (**PacketEvents**). Permite crear NPCs ligeros tipo jugador (`FakePlayer`) o de cualquier entidad, con soporte completo para skins personalizadas, menú interactivo (GUI), hologramas integrados, poses, equipamiento, visibilidad por jugador y cadenas de acciones al hacer clic.
+NpcFant is maintained as an open collaboration project.
 
----
+## What is NpcFant?
 
-## Características Principales
+NpcFant is a comprehensive NPC management plugin that bridges high-performance packet rendering with ease of use. It combines advanced features for handling virtual `FakePlayer` entities, multi-type mob NPCs, interactive skin menus, floating holograms, and click action chains in one unified package.
 
-- **Basado en Paquetes (Zero Lag)**: Los NPCs son entidades virtuales enviadas mediante paquetes con rastreo automático de distancia (aparecen y desaparecen dinámicamente según el rango del jugador).
-- **Multi-Versión (`1.17` – `26.3`)**: Funciona de forma nativa en todas las versiones modernas sin depender de reflexión pesada en el servidor.
-- **Sistema Completo de Skins + GUI (`/skingui`)**:
-  - Skins por nombre de jugador premium (`username`).
-  - Skins predefinidas (`preset` en `skins/skins.yml`).
-  - Skins desde archivos locales (`file` en `skins/custom/`).
-  - Menú gráfico interactivo y ítem selector (*Editor de Skins*).
-- **Múltiples Tipos de Entidades**: Soporta `PLAYER`, `VILLAGER`, `ZOMBIE`, `SKELETON`, `WARDEN`, `BREEZE`, `IRON_GOLEM`, `ENDERMAN` y más de 60 tipos de entidades.
-- **Poses, Efectos y Equipamiento**:
-  - Poses en tiempo real: `STANDING`, `SNEAKING`, `SITTING`, `SLEEPING`, `SWIMMING`.
-  - Equipamiento completo (`helmet`, `chestplate`, `leggings`, `boots`, `mainhand`, `offhand`).
-  - Efecto `Glow` e `Invisible`, y rotación automática de cabeza hacia los jugadores cercanos (`look`).
-- **Hologramas Multilínea Integrados**: Añade, edita o elimina líneas flotantes sobre cualquier NPC.
-- **Acciones al Interactuar (Clic Izquierdo / Derecho)**:
-  - Ejecutar comandos como jugador (`cmd`), como consola (`console`) o con permisos OP temporales (`opcmd`).
-  - Enviar mensajes con colores (`message`), reproducir sonidos (`sound`) o enviar a otro servidor BungeeCord/Velocity (`server`).
-- **Multilenguaje**: Traducciones incluidas en 12 idiomas (`es`, `en`, `de`, `fr`, `hr`, `hu`, `it`, `nl`, `no`, `pt`, `sv`, `zh`).
+With zero problematic external dependencies and native multi-version packet adapters powered by PacketEvents, NpcFant is designed to avoid version mismatch crashes and keep your server running at a solid 20 TPS.
 
----
+## 📖 Documentation & Guides
 
-## Comandos
+For a complete breakdown of every feature, command, permission, and configuration setup, please see the **[Plugin Guide](GUIDE.md)**.
 
-> **Tip**: En `<npc>` puedes usar el **UUID**, el **nombre** del NPC o escribir **`nearest`** para seleccionar automáticamente el NPC más cercano a ti.
+## Supported Versions
 
-### Comandos Principales (`/npcfant`, `/nfant`, `/fnpc`)
+NpcFant supports Minecraft Java Edition versions **1.17 through 1.21.11** (and modern Paper/Spigot releases utilizing version mapping like `26.1` – `26.3`):
+- **Spigot** - Complete support
+- **Paper** - Full compatibility with modern Mojang mappings and Adventure APIs
+- **Bukkit / Purpur** - Full Bukkit API compliance
 
-| Comando | Descripción | Permiso |
-|---|---|---|
-| `/npcfant create <tipo> <nombre>` | Crea un NPC en tu posición actual | `npcfant.create` |
-| `/npcfant remove <npc>` | Elimina un NPC permanentemente | `npcfant.remove` |
-| `/npcfant clone <npc>` | Clona un NPC en tu posición | `npcfant.create` |
-| `/npcfant move <npc>` | Mueve el NPC a tu ubicación actual | `npcfant.admin` |
-| `/npcfant tp <npc>` | Te teletransporta a la posición del NPC | `npcfant.use` |
-| `/npcfant name <npc> <nombre>` | Cambia el nombre visible (soporta colores `&`) | `npcfant.admin` |
-| `/npcfant skin <npc> <preset\|file\|username> <valor>` | Cambia la skin del NPC | `npcfant.skin` |
-| `/npcfant pose <npc> <standing\|sneaking\|sitting\|sleeping\|swimming>` | Cambia la postura del NPC | `npcfant.admin` |
-| `/npcfant equip <npc> <helmet\|chestplate\|leggings\|boots\|mainhand\|offhand\|clear>` | Equipa el ítem que tienes en tu mano principal | `npcfant.admin` |
-| `/npcfant glow <npc> <color\|off>` | Activa o desactiva el brillo del NPC | `npcfant.admin` |
-| `/npcfant invisible <npc>` | Alterna la invisibilidad del NPC | `npcfant.admin` |
-| `/npcfant look <npc>` | Alterna si el NPC sigue con la mirada a los jugadores | `npcfant.admin` |
-| `/npcfant hologram <npc> <add\|set\|remove\|list> [args]` | Gestiona las líneas del holograma del NPC | `npcfant.hologram` |
-| `/npcfant action <npc> <add\|remove\|list\|clear> [tipo] [valor]` | Gestiona las acciones al hacer clic en el NPC | `npcfant.admin` |
-| `/npcfant visible <npc> <all\|only\|add\|remove> [jugador]` | Controla qué jugadores pueden ver al NPC | `npcfant.admin` |
-| `/npcfant info [npc]` | Muestra la información detallada del NPC | `npcfant.use` |
-| `/npcfant list` | Lista todos los NPCs registrados | `npcfant.use` |
-| `/npcfant reload` | Recarga la configuración y las skins | `npcfant.reload` |
+Each version module is compiled separately ensuring optimal performance.
 
-### Editor Gráfico de Skins (`/skingui`, `/sgui`, `/skinmenu`)
+## Setting Up
 
-| Comando | Descripción | Permiso |
-|---|---|---|
-| `/skingui` | Te entrega el ítem **Editor de Skins** en el inventario | `npcfant.skingui` |
-| `/skingui open` | Abre directamente el menú gráfico de skins | `npcfant.skingui` |
+Take a look at the **[Installation Section of the Guide](GUIDE.md#installation)** for detailed setups.
 
----
+## Skin System & GUI
 
-## Ejemplos de Uso Rápido
+NpcFant includes an asynchronous skin fetching and caching engine alongside an in-game GUI (`/skingui`):
+* Fetch skins directly from premium Minecraft usernames (`username`), preset definitions (`preset`), or custom local YAML files (`file`).
+* Runs all HTTP skin requests on a background thread to prevent server lag/TPS drop.
 
-1. **Crear un NPC jugador con colores en el nombre:**
-   ```mcfunction
-   /npcfant create PLAYER &6&lGuardia Real
-   ```
-2. **Cambiarle la skin por la de un jugador de Minecraft:**
-   ```mcfunction
-   /npcfant skin nearest username Notch
-   ```
-3. **Equiparle el ítem que llevas en la mano:**
-   ```mcfunction
-   /npcfant equip nearest mainhand
-   ```
-4. **Añadir un holograma encima del NPC:**
-   ```mcfunction
-   /npcfant hologram nearest add &e¡Haz clic para ir al Lobby!
-   ```
-5. **Añadir acciones al hacer clic en el NPC:**
-   ```mcfunction
-   /npcfant action nearest add message &a¡Bienvenido al servidor, {player}!
-   /npcfant action nearest add console give {player} diamond 1
-   /npcfant action nearest add server survival
+## Quick Commands Overview
+
+### Main NPC Commands
+- **/npcfant create `<type>` `<name>`**: Create a new NPC at your current location.
+- **/npcfant remove `<npc>`**: Remove an existing NPC.
+- **/npcfant clone `<npc>`**: Clone an NPC at your position.
+- **/npcfant move `<npc>`**: Move an NPC to your current position.
+- **/npcfant tp `<npc>`**: Teleport to an NPC.
+- **/npcfant list** / **/npcfant info `[npc]`**: List all active NPCs or inspect details.
+
+### Customization & Interaction Commands
+- **/npcfant skin `<npc>` `<preset|file|username>` `<value>`**: Apply a custom skin to an NPC.
+- **/npcfant name `<npc>` `<name>`**: Change an NPC's display name (supports `&` color codes).
+- **/npcfant pose `<npc>` `<pose>`**: Set NPC posture (`standing`, `sneaking`, `sitting`, `sleeping`, `swimming`).
+- **/npcfant equip `<npc>` `<slot>`**: Equip the item in your main hand onto the NPC.
+- **/npcfant hologram `<npc>` `<add|set|remove|list>`**: Manage integrated floating hologram lines.
+- **/npcfant action `<npc>` `<add|remove|list|clear>`**: Bind click actions (`cmd`, `console`, `opcmd`, `message`, `sound`, `server`).
+- **/npcfant glow `<npc>` `<color|off>`** / **/npcfant invisible `<npc>`**: Toggle visual effects.
+- **/skingui**: Receive the Skin Editor item or open the interactive Skin GUI (`/skingui open`).
+
+For a full table of permissions, arguments, and details see the **[Guide commands section](GUIDE.md#commands-and-permissions)**.
+
+## Build Instructions
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Anonimous7800/Npc-Fant.git
+   cd Npc-Fant
    ```
 
----
+2. Run Maven build:
+   ```bash
+   mvn clean package -DskipTests
+   ```
 
-## Compilación desde el Código Fuente
-
-Requisitos:
-- **Java JDK 17** o superior
-- **Apache Maven 3.8+**
-
-Para compilar y generar el JAR listo para el servidor (con dependencias incluidas y reubicadas):
-
-```bash
-mvn clean package -pl NpcfantCore -am -DskipTests
-```
-
-El archivo compilado se generará en:
-```text
-NpcfantCore/target/Npcfant-2.0.jar
-```
+3. Locate compiled artifacts:
+   - Shaded Jar: `NpcfantCore/target/Npcfant-2.0.jar`
+   - Version adapters: Located in the `target` folder of each version module (`v1_17_R1` – `v26_3_R1`).
 
 ---
 
-## Estructura del Proyecto
+<div align="center">
 
-- **`NpcfantAPI`**: Interfaces públicas (`INPC`, `INPCManager`, `IHologram`, `INPCAction`) y eventos (`NPCInteractEvent`, `NPCSkinChangeEvent`) para desarrolladores.
-- **`NpcfantCore`**: Núcleo del plugin, gestor de paquetes con PacketEvents, comandos, almacenamiento YAML, sistema de hologramas, diálogos y GUI de skins.
-- **`v1_17_R1` – `v26_3_R1`**: Módulos adaptadores por versión.
+**Made with ❤️ by anonimous1221 (plusstaff035@gmail.com)**
 
----
+[GitHub](https://github.com/Anonimous7800/Npc-Fant) • [License](LICENSE) • [Plugin Guide](GUIDE.md)
 
-## Licencia
+Last updated: October 2026
 
-Distribuido bajo la licencia **MIT**. Consulta el archivo [LICENSE](LICENSE) para más detalles.
+</div>

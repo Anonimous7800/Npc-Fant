@@ -15,21 +15,16 @@
     <artifactId>v1_19_R1</artifactId>
     <packaging>jar</packaging>
     <name>NpcFant v1_19_R1</name>
-    <description>Adaptador NMS para Minecraft 1.19-R0.1-SNAPSHOT</description>
+    <description>Adaptador NMS para v1_19_R1</description>
 
     <dependencies>
-        
         <dependency>
             <groupId>com.example.advancednpc</groupId>
             <artifactId>NpcfantAPI</artifactId>
         </dependency>
-        
         <dependency>
-            <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-api</artifactId>
-            <version>1.19-R0.1-SNAPSHOT</version>
-            <scope>provided</scope>
+            <groupId>io.papermc.paper</groupId>
+            <artifactId>paper-api</artifactId>
         </dependency>
     </dependencies>
 </project>
-

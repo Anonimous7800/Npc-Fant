@@ -4,30 +4,27 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                              https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>com.example.advancednpc</groupId>
         <artifactId>Npcfant-parent</artifactId>
         <version>2.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
+
     <artifactId>v26_1_R3</artifactId>
     <packaging>jar</packaging>
-    <name>NpcFant v26_1_R3</name>    <description>Adaptador NMS</description>
+    <name>NpcFant v26_1_R3</name>
+    <description>Adaptador NMS para v26_1_R3</description>
 
-    <properties>
-        <java.version>21</java.version>
-    </properties>
     <dependencies>
         <dependency>
             <groupId>com.example.advancednpc</groupId>
             <artifactId>NpcfantAPI</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-api</artifactId>
-            <version>26.1.2-R0.1-SNAPSHOT</version>
-            <scope>provided</scope>
+            <groupId>io.papermc.paper</groupId>
+            <artifactId>paper-api</artifactId>
         </dependency>
     </dependencies>
 </project>
-
