@@ -56,7 +56,9 @@ public class AdvancedNPCPlugin extends JavaPlugin {
         patchPacketEventsServerManager();
         PacketEvents.getAPI().getSettings()
             .reEncodeByDefault(false)
-            .checkForUpdates(false);
+            .checkForUpdates(false)
+            .kickOnPacketException(false)
+            .kickIfTerminated(false);
         PacketEvents.getAPI().load();
         if (PacketEvents.getAPI().getServerManager().getVersion() == ServerVersion.getLatest()) {
             ProtocolPacketIdSync.synchronize(getLogger());

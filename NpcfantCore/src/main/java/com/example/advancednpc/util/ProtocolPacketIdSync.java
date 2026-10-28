@@ -480,12 +480,17 @@ public final class ProtocolPacketIdSync {
                 versionMap.put(id, pt);
                 count++;
             } else {
+                versionMap.put(id, new PassthroughPacketType(entry.getKey(), id, com.github.retrooper.packetevents.protocol.PacketSide.CLIENT));
                 unmapped.add(entry.getKey() + "=" + id);
             }
         }
 
+        for (int id = 0; id < 256; id++) {
+            versionMap.putIfAbsent(id, new PassthroughPacketType("client_passthrough_" + id, id, com.github.retrooper.packetevents.protocol.PacketSide.CLIENT));
+        }
+
         if (logger != null && !unmapped.isEmpty()) {
-            logger.info("Paquetes Clientbound 26.3 no mapeados (passthrough nativo): " + unmapped);
+            logger.info("Paquetes Clientbound 26.3 mapeados como passthrough nativo: " + unmapped);
         }
         return count;
     }
@@ -521,12 +526,17 @@ public final class ProtocolPacketIdSync {
                 versionMap.put(id, pt);
                 count++;
             } else {
+                versionMap.put(id, new PassthroughPacketType(entry.getKey(), id, com.github.retrooper.packetevents.protocol.PacketSide.SERVER));
                 unmapped.add(entry.getKey() + "=" + id);
             }
         }
 
+        for (int id = 0; id < 256; id++) {
+            versionMap.putIfAbsent(id, new PassthroughPacketType("server_passthrough_" + id, id, com.github.retrooper.packetevents.protocol.PacketSide.SERVER));
+        }
+
         if (logger != null && !unmapped.isEmpty()) {
-            logger.info("Paquetes Serverbound 26.3 no mapeados (passthrough nativo): " + unmapped);
+            logger.info("Paquetes Serverbound 26.3 mapeados como passthrough nativo: " + unmapped);
         }
         return count;
     }
@@ -707,5 +717,37 @@ public final class ProtocolPacketIdSync {
                     + com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes.ENTITY_POSE.getId(com.github.retrooper.packetevents.protocol.player.ClientVersion.getLatest()) + ")");
             }
         } catch (Throwable ignored) {}
+    }
+
+    public static final class PassthroughPacketType implements PacketTypeCommon {
+        private final String name;
+        private final int id;
+        private final com.github.retrooper.packetevents.protocol.PacketSide side;
+
+        public PassthroughPacketType(String name, int id, com.github.retrooper.packetevents.protocol.PacketSide side) {
+            this.name = name;
+            this.id = id;
+            this.side = side;
+        }
+
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public int getId(com.github.retrooper.packetevents.protocol.player.ClientVersion clientVersion) {
+            return id;
+        }
+
+        @Override
+        public com.github.retrooper.packetevents.protocol.PacketSide getSide() {
+            return side;
+        }
+
+        @Override
+        public Class<? extends com.github.retrooper.packetevents.wrapper.PacketWrapper<?>> getWrapperClass() {
+            return null;
+        }
     }
 }
