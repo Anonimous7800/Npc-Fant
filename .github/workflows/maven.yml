@@ -43,7 +43,7 @@ jobs:
       - name: Send Build Status & Errors to Discord
         if: always()
         env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK || 'https://discord.com/api/webhooks/1564829859555840121/DIUDWfay1l5zG3k2UlU2hpnYzc6endSjE3slI658Dlh9PRmRJkhSctNaC1yyrAmc6Bv6' }}
           BUILD_OUTCOME: ${{ steps.maven_build.outcome }}
           REPO_NAME: ${{ github.repository }}
           COMMIT_SHA: ${{ github.sha }}
@@ -97,3 +97,4 @@ jobs:
       - name: Update dependency graph
         if: steps.maven_build.outcome == 'success'
         uses: advanced-security/maven-dependency-submission-action@v4
+
