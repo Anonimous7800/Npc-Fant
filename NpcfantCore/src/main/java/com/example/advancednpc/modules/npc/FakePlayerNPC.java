@@ -22,17 +22,13 @@ import com.github.retrooper.packetevents.wrapper.play.server.*;
 import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,7 +36,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class FakePlayerNPC {
 
     private static final AtomicInteger NEXT_ENTITY_ID = new AtomicInteger(100000);
-    private static final int SKIN_LAYERS_META_INDEX = resolveSkinLayersMetaIndex();
 
     public static final String STEVE_VALUE     = "";
     public static final String STEVE_SIGNATURE = "";
@@ -60,56 +55,17 @@ public class FakePlayerNPC {
     private volatile boolean   respawning   = false;
     private final Plugin       plugin;
 
-    private final Set<UUID> spawnedFor = ConcurrentHashMap.newKeySet();
+    private final Set<UUID> spawnedFor     = ConcurrentHashMap.newKeySet();
+    private final Set<UUID> teamCreatedFor = ConcurrentHashMap.newKeySet();
 
     public FakePlayerNPC(UUID uuid, String name, Location location, Plugin plugin) {
         this.uuid        = uuid;
-        this.profileUuid = UUID.randomUUID();
+        this.profileUuid = uuid;
         this.name        = HologramLine.colorize(name);
         this.location    = location.clone();
         this.plugin      = plugin;
         this.entityId    = NEXT_ENTITY_ID.getAndIncrement();
         this.skinData    = new SkinData(STEVE_VALUE, STEVE_SIGNATURE);
-    }
-
-    private static int resolveSkinLayersMetaIndex() {
-        String[] candidateClasses = {
-            "net.minecraft.world.entity.Avatar",
-            "net.minecraft.world.entity.player.Player"
-        };
-        for (String clsName : candidateClasses) {
-            try {
-                Class<?> cls = Class.forName(clsName);
-                for (Field f : cls.getDeclaredFields()) {
-                    if (!Modifier.isStatic(f.getModifiers())) continue;
-                    if (f.getName().contains("CUSTOMISATION") || f.getName().contains("CUSTOMIZATION")) {
-                        f.setAccessible(true);
-                        Object accessor = f.get(null);
-                        if (accessor != null) {
-                            Method idMethod = accessor.getClass().getMethod("id");
-                            return (int) idMethod.invoke(accessor);
-                        }
-                    }
-                }
-                for (Field f : cls.getDeclaredFields()) {
-                    if (!Modifier.isStatic(f.getModifiers())) continue;
-                    Type gType = f.getGenericType();
-                    if (gType instanceof ParameterizedType pt) {
-                        Type[] args = pt.getActualTypeArguments();
-                        if (args.length == 1 && args[0] == Byte.class) {
-                            f.setAccessible(true);
-                            Object accessor = f.get(null);
-                            if (accessor != null) {
-                                Method idMethod = accessor.getClass().getMethod("id");
-                                int id = (int) idMethod.invoke(accessor);
-                                if (id >= 15 && id <= 19) return id;
-                            }
-                        }
-                    }
-                }
-            } catch (Throwable ignored) {}
-        }
-        return 16;
     }
 
     public void spawnForAll() {
@@ -203,6 +159,7 @@ public class FakePlayerNPC {
 
     public void removePlayerFromTracking(UUID playerId) {
         spawnedFor.remove(playerId);
+        teamCreatedFor.remove(playerId);
     }
 
     public void respawnForAll() {
@@ -343,6 +300,7 @@ public class FakePlayerNPC {
 
     private void sendHideNametagTeamPacket(Player player) {
         try {
+            if (!teamCreatedFor.add(player.getUniqueId())) return;
             String teamName = "npc_" + (entityId % 100000);
             String profileName = getSafeProfileName();
             WrapperPlayServerTeams.ScoreBoardTeamInfo teamInfo =
@@ -382,12 +340,15 @@ public class FakePlayerNPC {
         String profileName = getSafeProfileName();
         UserProfile profile = new UserProfile(activeProfileUuid, profileName, textures);
 
+        Component displayComponent = LegacyComponentSerializer.legacySection()
+            .deserialize(HologramLine.colorize(name));
+
         EnumSet<WrapperPlayServerPlayerInfoUpdate.Action> actions = EnumSet.of(
             WrapperPlayServerPlayerInfoUpdate.Action.ADD_PLAYER,
             WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_GAME_MODE,
             WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_LISTED,
             WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_LATENCY,
-            WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_HAT
+            WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_DISPLAY_NAME
         );
 
         WrapperPlayServerPlayerInfoUpdate infoUpdate = new WrapperPlayServerPlayerInfoUpdate(
@@ -397,10 +358,8 @@ public class FakePlayerNPC {
                 false,
                 0,
                 GameMode.SURVIVAL,
-                null,
-                null,
-                0,
-                true
+                displayComponent,
+                null
             )
         );
         PacketEvents.getAPI().getPlayerManager().sendPacket(player, infoUpdate);
@@ -444,13 +403,22 @@ public class FakePlayerNPC {
             };
             baseMetadata.add(new EntityData<>(6, EntityDataTypes.ENTITY_POSE, pePose));
 
-            if (npcType == NPCType.PLAYER && SKIN_LAYERS_META_INDEX > 0) {
-                baseMetadata.add(new EntityData<>(SKIN_LAYERS_META_INDEX, EntityDataTypes.BYTE, (byte) 0x7F));
-            }
-
             WrapperPlayServerEntityMetadata metaPacket =
                 new WrapperPlayServerEntityMetadata(entityId, baseMetadata);
             PacketEvents.getAPI().getPlayerManager().sendPacket(player, metaPacket);
+
+            if (npcType == NPCType.PLAYER) {
+                ServerVersion ver = PacketEvents.getAPI().getServerManager().getVersion();
+                if (ver.isOlderThanOrEquals(ServerVersion.V_1_21_1)) {
+                    List<EntityData<?>> skinLayers = Collections.singletonList(
+                        new EntityData<>(17, EntityDataTypes.BYTE, (byte) 0x7F)
+                    );
+                    PacketEvents.getAPI().getPlayerManager().sendPacket(
+                        player,
+                        new WrapperPlayServerEntityMetadata(entityId, skinLayers)
+                    );
+                }
+            }
         } catch (Exception ignored) {}
     }
 

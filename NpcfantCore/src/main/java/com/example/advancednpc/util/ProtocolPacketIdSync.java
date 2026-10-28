@@ -552,7 +552,7 @@ public final class ProtocolPacketIdSync {
                 (Map<Byte, Map<Integer, PacketTypeCommon>>) mapFieldS.get(null);
             for (Map<Integer, PacketTypeCommon> m : mapS.values()) {
                 for (int id = 0; id < 64; id++) {
-                    m.putIfAbsent(id, PacketType.Configuration.Server.CUSTOM_PAYLOAD);
+                    m.putIfAbsent(id, PacketType.Configuration.Server.PLUGIN_MESSAGE);
                 }
             }
 
@@ -562,7 +562,7 @@ public final class ProtocolPacketIdSync {
                 (Map<Byte, Map<Integer, PacketTypeCommon>>) mapFieldC.get(null);
             for (Map<Integer, PacketTypeCommon> m : mapC.values()) {
                 for (int id = 0; id < 64; id++) {
-                    m.putIfAbsent(id, PacketType.Configuration.Client.CUSTOM_PAYLOAD);
+                    m.putIfAbsent(id, PacketType.Configuration.Client.PLUGIN_MESSAGE);
                 }
             }
         } catch (Throwable ignored) {}
