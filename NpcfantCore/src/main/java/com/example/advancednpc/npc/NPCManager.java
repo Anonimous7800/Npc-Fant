@@ -46,6 +46,7 @@ public class NPCManager implements INPCManager, Listener {
     private final CooldownManager cooldownManager;
     private       SkinManager     skinManager;
     private       NPCStorage      storage;
+    private       com.example.advancednpc.modules.gui.NPCEditorGUI editorGUI;
     private       BukkitTask      trackerTask;
     private       PacketListenerAbstract packetListener;
     private       int             tickCounter = 0;
@@ -64,6 +65,8 @@ public class NPCManager implements INPCManager, Listener {
 
     public void setSkinManager(SkinManager sm) { this.skinManager = sm; }
     public void setStorage(NPCStorage s)       { this.storage = s; }
+    public void setEditorGUI(com.example.advancednpc.modules.gui.NPCEditorGUI eg) { this.editorGUI = eg; }
+    public com.example.advancednpc.modules.gui.NPCEditorGUI getEditorGUI() { return editorGUI; }
 
     private void registerPacketListener() {
         this.packetListener = new PacketListenerAbstract(PacketListenerPriority.NORMAL) {
@@ -102,6 +105,15 @@ public class NPCManager implements INPCManager, Listener {
 
     private void handleInteraction(Player player, NPCEntity npc, NPCInteractEvent.InteractType type) {
         if (!player.isOnline()) return;
+
+        if (player.isSneaking() && type == NPCInteractEvent.InteractType.LEFT_CLICK
+                && (player.isOp() || player.hasPermission("npcfant.admin"))) {
+            if (editorGUI != null) {
+                editorGUI.openEditor(player, npc);
+                return;
+            }
+        }
+
         if (!cooldownManager.canInteract(player.getUniqueId(), npc.getId())) {
             return;
         }

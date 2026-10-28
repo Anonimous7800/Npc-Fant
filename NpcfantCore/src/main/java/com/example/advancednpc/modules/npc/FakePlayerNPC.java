@@ -276,12 +276,20 @@ public class FakePlayerNPC {
 
     private void sendRotationPackets(Player player, float yaw, float pitch) {
         try {
+            WrapperPlayServerEntityTeleport tpPacket = new WrapperPlayServerEntityTeleport(
+                entityId,
+                new Vector3d(location.getX(), location.getY(), location.getZ()),
+                yaw,
+                pitch,
+                true
+            );
             WrapperPlayServerEntityHeadLook headLookPacket =
                 new WrapperPlayServerEntityHeadLook(entityId, yaw);
             WrapperPlayServerEntityRotation rotPacket =
                 new WrapperPlayServerEntityRotation(entityId, yaw, pitch, true);
-            PacketEvents.getAPI().getPlayerManager().sendPacket(player, headLookPacket);
+            PacketEvents.getAPI().getPlayerManager().sendPacket(player, tpPacket);
             PacketEvents.getAPI().getPlayerManager().sendPacket(player, rotPacket);
+            PacketEvents.getAPI().getPlayerManager().sendPacket(player, headLookPacket);
         } catch (Exception ignored) {}
     }
 

@@ -6,6 +6,7 @@ import com.example.advancednpc.commands.SkinGUICommand;
 import com.example.advancednpc.config.ConfigManager;
 import com.example.advancednpc.config.TranslationManager;
 import com.example.advancednpc.modules.dialogue.DialogueManager;
+import com.example.advancednpc.modules.gui.NPCEditorGUI;
 import com.example.advancednpc.modules.gui.SkinMenuGUI;
 import com.example.advancednpc.modules.hologram.HologramManager;
 import com.example.advancednpc.modules.interaction.CooldownManager;
@@ -35,6 +36,7 @@ public class AdvancedNPCPlugin extends JavaPlugin {
     private DialogueManager    dialogueManager;
     private SkinManager        skinManager;
     private SkinMenuGUI        skinMenuGUI;
+    private NPCEditorGUI       npcEditorGUI;
     private NPCStorage         npcStorage;
 
     @Override
@@ -118,9 +120,11 @@ public class AdvancedNPCPlugin extends JavaPlugin {
         this.npcStorage      = new NPCStorage(this);
         this.dialogueManager = new DialogueManager(this);
         this.skinMenuGUI     = new SkinMenuGUI(this);
+        this.npcEditorGUI    = new NPCEditorGUI(this);
 
         this.npcManager.setSkinManager(skinManager);
         this.npcManager.setStorage(npcStorage);
+        this.npcManager.setEditorGUI(npcEditorGUI);
         NPCAdapter.setActiveManager(this.npcManager);
 
         getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
@@ -139,6 +143,7 @@ public class AdvancedNPCPlugin extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(npcManager, this);
         getServer().getPluginManager().registerEvents(skinMenuGUI, this);
+        getServer().getPluginManager().registerEvents(npcEditorGUI, this);
 
         getServer().getScheduler().runTaskLater(this, () -> npcManager.loadAll(), 40L);
 
@@ -171,5 +176,6 @@ public class AdvancedNPCPlugin extends JavaPlugin {
     public DialogueManager    getDialogueManager()     { return dialogueManager; }
     public SkinManager        getSkinManager()         { return skinManager; }
     public SkinMenuGUI        getSkinMenuGUI()         { return skinMenuGUI; }
+    public NPCEditorGUI       getNPCEditorGUI()        { return npcEditorGUI; }
     public NPCStorage         getNpcStorage()          { return npcStorage; }
 }
