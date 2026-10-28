@@ -226,6 +226,9 @@ public class NPCManager implements INPCManager, Listener {
             if (entity.getHologramId() != null) {
                 hologramManager.getHologram(entity.getHologramId()).ifPresent(Hologram::refresh);
             }
+            if (type == NPCType.PLAYER && !SkinManager.isSigned(skin)) {
+                applySkinAsync(id, "preset", "steve", null);
+            }
         }, 2L);
 
         if (storage != null) storage.save(entity);
@@ -418,15 +421,20 @@ public class NPCManager implements INPCManager, Listener {
                 : Optional.empty();
 
             Bukkit.getScheduler().runTask(plugin, () -> {
-                if (sd.isPresent()) {
+                if (sd.isPresent() && SkinManager.isSigned(sd.get())) {
                     entity.getFakePlayer().updateSkin(sd.get());
                     entity.setSkin(sd.get().getValue(), sd.get().getSignature());
                     if (storage != null) storage.save(entity);
                     if (requester != null)
-                        requester.sendMessage("§a[NpcFant] Skin aplicada correctamente.");
+                        requester.sendMessage("§a[NpcFant] Skin '" + input + "' aplicada correctamente.");
                 } else {
-                    if (requester != null)
-                        requester.sendMessage("§c[NpcFant] No se encontró la skin '" + input + "'.");
+                    if (requester != null) {
+                        if ("file".equalsIgnoreCase(type) && skinManager != null && !skinManager.hasLocalPng(input)) {
+                            requester.sendMessage("§c[NpcFant] No se encontró el archivo '" + input + "' en plugins/NpcFant/skins/custom/.");
+                        } else {
+                            requester.sendMessage("§c[NpcFant] No se pudo cargar/firmar la skin '" + input + "'. Prueba con un nombre de jugador premium o espera unos segundos si es un .png personalizado.");
+                        }
+                    }
                 }
             });
         });
@@ -471,6 +479,9 @@ public class NPCManager implements INPCManager, Listener {
                 entity.getFakePlayer().spawnForAll();
                 if (entity.getHologramId() != null) {
                     hologramManager.getHologram(entity.getHologramId()).ifPresent(Hologram::refresh);
+                }
+                if (entity.getType() == NPCType.PLAYER && !SkinManager.isSigned(entity.getFakePlayer().getSkinData())) {
+                    applySkinAsync(entity.getId(), "preset", "steve", null);
                 }
             }
         }, 20L);

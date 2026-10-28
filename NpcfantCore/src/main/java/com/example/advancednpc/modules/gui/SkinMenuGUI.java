@@ -106,9 +106,17 @@ public class SkinMenuGUI implements Listener {
         skinManager.getPresetSkins().entrySet().stream()
             .map(e -> Map.entry("preset:" + e.getKey(), e.getValue()))
             .forEach(allSkins::add);
-        skinManager.getLocalSkins().entrySet().stream()
-            .map(e -> Map.entry("file:" + e.getKey(), e.getValue()))
-            .forEach(allSkins::add);
+
+        Set<String> addedFiles = new HashSet<>();
+        skinManager.getLocalSkins().forEach((k, v) -> {
+            addedFiles.add(k);
+            allSkins.add(Map.entry("file:" + k, v));
+        });
+        skinManager.getLocalPngFiles().keySet().forEach(k -> {
+            if (addedFiles.add(k)) {
+                allSkins.add(Map.entry("file:" + k, skinManager.getDefaultSkin()));
+            }
+        });
 
         playerSkinList.put(player.getUniqueId(), allSkins);
         playerPages.put(player.getUniqueId(), page);
