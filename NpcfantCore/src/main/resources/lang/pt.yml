@@ -1,0 +1,20 @@
+# ═══════════════════════════════════════
+#   AdvancedNPC — Idioma: Português (pt)
+# ═══════════════════════════════════════
+
+prefix: "&6[AdvancedNPC] &r"
+
+commands:
+  no-permission: "&cVocê não tem permissão para usar este comando."
+  only-players: "&cEste comando só pode ser executado por jogadores."
+  usage: "&eUso: /npc <create|remove|skin|dialogue|action|edit|reload>"
+  npc-created: "&aNPC '&f{name}&a' criado com sucesso."
+  npc-removed: "&aNPC removido com sucesso."
+  npc-not-found: "&cNPC não encontrado."
+  invalid-uuid: "&cUUID inválido."
+  config-reloaded: "&aConfiguração recarregada com sucesso."
+  skin-changed: "&aSkin do NPC atualizada."
+
+interactions:
+  default-greeting: "&fOlá, &e{player}&f! Como posso ajudar?"
+  default-farewell: "&fAté logo, &e{player}&f!"

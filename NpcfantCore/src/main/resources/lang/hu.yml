@@ -1,0 +1,20 @@
+# ═══════════════════════════════════════
+#   AdvancedNPC — Nyelv: Magyar (hu)
+# ═══════════════════════════════════════
+
+prefix: "&6[AdvancedNPC] &r"
+
+commands:
+  no-permission: "&cNincs jogosultságod a parancs használatához."
+  only-players: "&cEzt a parancsot csak játékosok futtathatják."
+  usage: "&eHasználat: /npc <create|remove|skin|dialogue|action|edit|reload>"
+  npc-created: "&aNPC '&f{name}&a' sikeresen létrehozva."
+  npc-removed: "&aNPC sikeresen eltávolítva."
+  npc-not-found: "&cNPC nem található."
+  invalid-uuid: "&cÉrvénytelen UUID."
+  config-reloaded: "&aKonfiguráció sikeresen újratöltve."
+  skin-changed: "&aNPC skin frissítve."
+
+interactions:
+  default-greeting: "&fSzia, &e{player}&f! Miben segíthetek?"
+  default-farewell: "&fViszlát, &e{player}&f!"

@@ -1,0 +1,19 @@
+# ═══════════════════════════════════════
+#   NpcFant — Configuration File
+# ═══════════════════════════════════════
+
+settings:
+  # Idioma del plugin (es, en, de, fr, hr, hu, it, nl, no, pt, sv, zh)
+  language: "es"
+
+  # Activa mensajes de depuración en la consola
+  debug: false
+
+  # Cooldown en segundos para las interacciones con los NPCs (clic derecho)
+  interaction-cooldown-seconds: 2
+
+dialogue:
+  # Activar el sistema de diálogos interactivos
+  enabled: true
+  # Proveedor de diálogos (SCRIPT o CHATGPT)
+  provider: "SCRIPT"

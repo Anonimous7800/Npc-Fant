@@ -1,0 +1,20 @@
+# ═══════════════════════════════════════
+#   AdvancedNPC — Språk: Norsk (no)
+# ═══════════════════════════════════════
+
+prefix: "&6[AdvancedNPC] &r"
+
+commands:
+  no-permission: "&cDu har ikke tillatelse til å bruke denne kommandoen."
+  only-players: "&cDenne kommandoen kan bare utføres av spillere."
+  usage: "&eBruk: /npc <create|remove|skin|dialogue|action|edit|reload>"
+  npc-created: "&aNPC '&f{name}&a' ble opprettet."
+  npc-removed: "&aNPC ble fjernet."
+  npc-not-found: "&cFant ikke NPC."
+  invalid-uuid: "&cUgyldig UUID."
+  config-reloaded: "&aKonfigurasjonen ble lastet på nytt."
+  skin-changed: "&aNPC-skin ble oppdatert."
+
+interactions:
+  default-greeting: "&fHei, &e{player}&f! Hvordan kan jeg hjelpe deg?"
+  default-farewell: "&fHa det bra, &e{player}&f!"

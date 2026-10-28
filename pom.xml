@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- ══ Coordenadas del proyecto padre ══ -->
+    <groupId>com.example.advancednpc</groupId>
+    <artifactId>Npcfant-parent</artifactId>
+    <version>2.0</version>
+    <packaging>pom</packaging>
+
+    <name>NpcFant Parent</name>
+    <description>Plugin avanzado de NPCs — 1.17 hasta 1.21.5+ — por anonimous1221</description>
+
+    <!--
+        VERSIONES SOPORTADAS
+        ═══════════════════════════════════════════════════════════
+        1.17   → v1_17_R1
+        1.18   → v1_18_R1 / v1_18_R2
+        1.19   → v1_19_R1 / v1_19_R2 / v1_19_R3
+        1.20   → v1_20_R1 / v1_20_R2 / v1_20_R3 / v1_20_R4
+        1.21   → v1_21_R1 / v1_21_R2 / v1_21_R3 / v1_21_R4
+        1.22   → v1_22_R1 / v1_22_R2 (futuro)
+        1.23   → v1_23_R1 (futuro)
+        1.24   → v1_24_R1 (futuro)
+        26.x   → Versiones experimentales/snapshot
+        ═══════════════════════════════════════════════════════════
+        Los módulos NMS requieren BuildTools instalado localmente.
+        Sin eso, compilar sólo el Core:
+            mvn clean package -pl NpcfantCore -am -DskipTests
+    -->
+
+    <!-- ══ Módulos hijos ══ -->
+    <modules>
+        <!-- API y Core -->
+        <module>NpcfantAPI</module>
+        <module>NpcfantCore</module>
+
+        <!-- Versiones estables actuales -->
+        <module>v1_17_R1</module>
+        <module>v1_18_R1</module>
+        <module>v1_18_R2</module>
+        <module>v1_19_R1</module>
+        <module>v1_19_R2</module>
+        <module>v1_19_R3</module>
+        <module>v1_20_R1</module>
+        <module>v1_20_R2</module>
+        <module>v1_20_R3</module>
+        <module>v1_20_R4</module>
+        <module>v1_21_R1</module>
+        <module>v1_21_R2</module>
+        <module>v1_21_R3</module>
+        <module>v1_21_R4</module>
+
+        <!-- Versiones futuras (nuevo formato) -->
+        <module>v1_21_R5</module> <!-- 1.21.11 -->
+        <module>v26_1_R1</module> <!-- 26.1 -->
+        <module>v26_1_R2</module> <!-- 26.1.1 -->
+        <module>v26_1_R3</module> <!-- 26.1.2 -->
+        <module>v26_2_R1</module> <!-- 26.2 -->
+        <module>v26_3_R1</module> <!-- 26.3 snapshot -->
+    </modules>
+
+    <!-- ══ Propiedades globales ══ -->
+    <properties>
+        <java.version>17</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <plugin.version>2.0</plugin.version>
+    </properties>
+
+    <!-- ══ Repositorios ══ -->
+    <repositories>
+        <repository>
+            <id>papermc</id>
+            <url>https://repo.papermc.io/repository/maven-public/</url>
+        </repository>
+        <repository>
+            <id>spigot-repo</id>
+            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+        </repository>
+        <repository>
+            <id>codemc-repo</id>
+            <url>https://repo.codemc.io/repository/maven-public/</url>
+        </repository>
+        <!-- PacketEvents multi-version NPC packets -->
+        <repository>
+            <id>codemc-snapshots</id>
+            <url>https://repo.codemc.io/repository/maven-snapshots/</url>
+        </repository>
+    </repositories>
+
+    <!-- ══ Gestión centralizada de dependencias ══ -->
+    <dependencyManagement>
+        <dependencies>
+            <!-- Paper API -->
+            <dependency>
+                <groupId>io.papermc.paper</groupId>
+                <artifactId>paper-api</artifactId>
+                <version>1.20.2-R0.1-SNAPSHOT</version>
+                <scope>provided</scope>
+            </dependency>
+            <!-- Gson (para peticiones HTTP de skins) -->
+            <dependency>
+                <groupId>com.google.code.gson</groupId>
+                <artifactId>gson</artifactId>
+                <version>2.10.1</version>
+                <scope>compile</scope>
+            </dependency>
+            <!-- API interna -->
+            <dependency>
+                <groupId>com.example.advancednpc</groupId>
+                <artifactId>NpcfantAPI</artifactId>
+                <version>${project.version}</version>
+                <scope>compile</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <!-- ══ Build global ══ -->
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.11.0</version>
+                    <configuration>
+                        <release>${java.version}</release>
+                        <encoding>UTF-8</encoding>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>

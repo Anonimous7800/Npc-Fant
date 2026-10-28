@@ -1,0 +1,42 @@
+# ════════════════════════════════════════════════
+#   NpcFant — Skins predefinidas
+#   Formato: nombre → valor (Base64 Mojang) + firma
+#
+#   Para añadir tu propia skin:
+#     1. Ve a https://mineskin.org
+#     2. Sube tu PNG o URL
+#     3. Copia "value" y "signature"
+#     4. Añádelas aquí o en skins/custom/mi_skin.yml
+# ════════════════════════════════════════════════
+
+skins:
+  steve:
+    display-name: "Steve (Default)"
+    value: "ewogICJ0aW1lc3RhbXAiIDogMTcxMDAwMDAwMDAwMCwKICAicHJvZmlsZUlkIiA6ICIwNjlhNzllNTRkODQ0MDY1YWE2ODU5MjZhNjQxMDdhYiIsCiAgInByb2ZpbGVOYW1lIiA6ICJTdGV2ZSIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS82MGEzNWFiMWM3MDI0MzQ0OWVmZTZiM2EwYzYwY2ExOWVhNTk4MmI3NDZhMzYzNWEzYzRlM2VjMjZhNjZlIgogICAgfQogIH0KfQ=="
+    signature: ""
+
+  alex:
+    display-name: "Alex (Default)"
+    value: "ewogICJ0aW1lc3RhbXAiIDogMTcxMDAwMDAwMDAwMCwKICAicHJvZmlsZUlkIiA6ICI3OTNmMzA3ZDNhYzM0YjBmOTRmOGJkOGI3ZDcwN2E4NiIsCiAgInByb2ZpbGVOYW1lIiA6ICJBbGV4IiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzgzY2VlNWNhNmFmY2RiMTcxMjg1YWE0MGRhNjUxN2I0N2IyNWQzZDZhNTg2MmZlOGI4NzdmMWYxNWY2NjU3NyIKICAgIH0KICB9Cn0="
+    signature: ""
+
+  guard:
+    display-name: "Guardia"
+    # Skin de guardia medieval - obtenida de MineSkin
+    value: "ewogICJ0aW1lc3RhbXAiIDogMTU4OTM4NzkyOTk1NiwKICAicHJvZmlsZUlkIiA6ICI0NTY3NDIxMDRiNjU0ODQxOTJjOGNlZjQ0NjUxYzI3YiIsCiAgInByb2ZpbGVOYW1lIiA6ICJNaGZfU3RldmUiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNjBhMzVhYjFjNzAyNDM0NDllZmU2YjNhMGM2MGNhMTllYTU5ODJiNzQ2YTM2MzVhM2M0ZTNlYzI2YTY2ZSIKICAgIH0KICB9Cn0="
+    signature: ""
+
+  merchant:
+    display-name: "Mercader"
+    value: "ewogICJ0aW1lc3RhbXAiIDogMTU4OTM4NzkyOTk1NiwKICAicHJvZmlsZUlkIiA6ICI0NTY3NDIxMDRiNjU0ODQxOTJjOGNlZjQ0NjUxYzI3YiIsCiAgInByb2ZpbGVOYW1lIiA6ICJNaGZfU3RldmUiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNjBhMzVhYjFjNzAyNDM0NDllZmU2YjNhMGM2MGNhMTllYTU5ODJiNzQ2YTM2MzVhM2M0ZTNlYzI2YTY2ZSIKICAgIH0KICB9Cn0="
+    signature: ""
+
+  warrior:
+    display-name: "Guerrero"
+    value: "ewogICJ0aW1lc3RhbXAiIDogMTU4OTM4NzkyOTk1NiwKICAicHJvZmlsZUlkIiA6ICI0NTY3NDIxMDRiNjU0ODQxOTJjOGNlZjQ0NjUxYzI3YiIsCiAgInByb2ZpbGVOYW1lIiA6ICJNaGZfU3RldmUiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNjBhMzVhYjFjNzAyNDM0NDllZmU2YjNhMGM2MGNhMTllYTU5ODJiNzQ2YTM2MzVhM2M0ZTNlYzI2YTY2ZSIKICAgIH0KICB9Cn0="
+    signature: ""
+
+  mage:
+    display-name: "Mago"
+    value: "ewogICJ0aW1lc3RhbXAiIDogMTU4OTM4NzkyOTk1NiwKICAicHJvZmlsZUlkIiA6ICI0NTY3NDIxMDRiNjU0ODQxOTJjOGNlZjQ0NjUxYzI3YiIsCiAgInByb2ZpbGVOYW1lIiA6ICJNaGZfU3RldmUiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNjBhMzVhYjFjNzAyNDM0NDllZmU2YjNhMGM2MGNhMTllYTU5ODJiNzQ2YTM2MzVhM2M0ZTNlYzI2YTY2ZSIKICAgIH0KICB9Cn0="
+    signature: ""

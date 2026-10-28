@@ -1,0 +1,20 @@
+# ═══════════════════════════════════════
+#   AdvancedNPC — Jezik: Hrvatski (hr)
+# ═══════════════════════════════════════
+
+prefix: "&6[AdvancedNPC] &r"
+
+commands:
+  no-permission: "&cNemate dopuštenje za korištenje ove naredbe."
+  only-players: "&cOvu naredbu mogu izvršiti samo igrači."
+  usage: "&eUpotreba: /npc <create|remove|skin|dialogue|action|edit|reload>"
+  npc-created: "&aNPC '&f{name}&a' uspješno stvoren."
+  npc-removed: "&aNPC uspješno uklonjen."
+  npc-not-found: "&cNPC nije pronađen."
+  invalid-uuid: "&cNeispravan UUID."
+  config-reloaded: "&aKonfiguracija uspješno ponovno učitana."
+  skin-changed: "&aIzgled NPC-a ažuriran."
+
+interactions:
+  default-greeting: "&fBok, &e{player}&f! Kako ti mogu pomoći?"
+  default-farewell: "&fDoviđenja, &e{player}&f!"

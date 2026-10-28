@@ -1,0 +1,45 @@
+name: NpcFant
+main: com.example.advancednpc.AdvancedNPCPlugin
+version: ${project.version}
+api-version: '1.17'
+description: Plugin avanzado de NPCs con FakePlayer real, hologramas y GUI de skins. Soporta 1.17–26.3
+author: anonimous1221
+website: https://github.com/anonimous1221/npcfant
+
+commands:
+  npcfant:
+    aliases: [nfant, fnpc]
+    description: Comando principal de NpcFant.
+    usage: /npcfant <subcomando> [args]
+    permission: npcfant.use
+  skingui:
+    aliases: [sgui, skinmenu]
+    description: Abre el menú de selección de skins para NPCs.
+    usage: /skingui [open]
+    permission: npcfant.skingui
+
+permissions:
+  npcfant.use:
+    description: Permite usar comandos básicos de NpcFant
+    default: op
+  npcfant.admin:
+    description: Permite usar todos los comandos de NpcFant
+    default: op
+  npcfant.create:
+    description: Permite crear NPCs
+    default: op
+  npcfant.remove:
+    description: Permite eliminar NPCs
+    default: op
+  npcfant.skin:
+    description: Permite cambiar skins de NPCs
+    default: op
+  npcfant.skingui:
+    description: Permite usar el menú GUI de skins
+    default: op
+  npcfant.hologram:
+    description: Permite gestionar hologramas de NPCs
+    default: op
+  npcfant.reload:
+    description: Permite recargar la configuración
+    default: op

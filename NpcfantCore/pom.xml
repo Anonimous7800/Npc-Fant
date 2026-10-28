@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.example.advancednpc</groupId>
+        <artifactId>Npcfant-parent</artifactId>
+        <version>2.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>NpcfantCore</artifactId>
+    <packaging>jar</packaging>
+    <name>NpcFant Core</name>
+    <description>LÃ³gica central del plugin NpcFant â€” por anonimous1221</description>
+
+    <!-- ══ Nombre del JAR de salida: Npcfant-2.0.jar ══ -->
+    <build>
+        <finalName>Npcfant-${project.version}</finalName>
+
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+
+        <plugins>
+            <!-- Shade: empaqueta todo en un Ãºnico JAR listo para el servidor -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals><goal>shade</goal></goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <!-- Reubica Gson y PacketEvents para evitar conflictos con otros plugins -->
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.google.gson</pattern>
+                                    <shadedPattern>com.example.advancednpc.libs.gson</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.github.retrooper.packetevents</pattern>
+                                    <shadedPattern>com.example.advancednpc.libs.packetevents</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>io.github.retrooper.packetevents</pattern>
+                                    <shadedPattern>com.example.advancednpc.libs.packetevents.platform</shadedPattern>
+                                </relocation>
+                            </relocations>
+                            <!-- Excluir firmas de dependencias externas -->
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <!-- Paper API -->
+        <dependency>
+            <groupId>io.papermc.paper</groupId>
+            <artifactId>paper-api</artifactId>
+        </dependency>
+        <!-- API interna -->
+        <dependency>
+            <groupId>com.example.advancednpc</groupId>
+            <artifactId>NpcfantAPI</artifactId>
+        </dependency>
+        <!-- Gson para peticiones HTTP de skins -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
+        <!-- PacketEvents: spawn de FakePlayer multi-versión (1.17-26.3) -->
+        <dependency>
+            <groupId>com.github.retrooper</groupId>
+            <artifactId>packetevents-spigot</artifactId>
+            <version>2.13.0</version>
+            <scope>compile</scope>
+        </dependency>
+            <dependency>
+            <groupId>com.example.advancednpc</groupId>
+            <artifactId>v1_17_R1</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.example.advancednpc</groupId>
+            <artifactId>v1_18_R1</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.example.advancednpc</groupId>
+            <artifactId>v1_18_R2</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.example.advancednpc</groupId>
+            <artifactId>v1_19_R1</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.example.advancednpc</groupId>
+            <artifactId>v1_19_R2</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.example.advancednpc</groupId>
+            <artifactId>v1_19_R3</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.example.advancednpc</groupId>
+            <artifactId>v1_20_R1</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.example.advancednpc</groupId>
+            <artifactId>v1_20_R2</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.example.advancednpc</groupId>
+            <artifactId>v1_20_R3</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.example.advancednpc</groupId>
+            <artifactId>v1_20_R4</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.example.advancednpc</groupId>
+            <artifactId>v1_21_R1</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.example.advancednpc</groupId>
+            <artifactId>v1_21_R2</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.example.advancednpc</groupId>
+            <artifactId>v1_21_R3</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.example.advancednpc</groupId>
+            <artifactId>v1_21_R4</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.example.advancednpc</groupId>
+            <artifactId>v1_21_R5</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.example.advancednpc</groupId>
+            <artifactId>v26_1_R1</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.example.advancednpc</groupId>
+            <artifactId>v26_1_R2</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.example.advancednpc</groupId>
+            <artifactId>v26_1_R3</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.example.advancednpc</groupId>
+            <artifactId>v26_2_R1</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.example.advancednpc</groupId>
+            <artifactId>v26_3_R1</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+    </dependencies>
+</project>
+

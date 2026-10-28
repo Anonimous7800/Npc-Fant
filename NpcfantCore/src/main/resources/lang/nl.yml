@@ -1,0 +1,20 @@
+# ═══════════════════════════════════════
+#   AdvancedNPC — Taal: Nederlands (nl)
+# ═══════════════════════════════════════
+
+prefix: "&6[AdvancedNPC] &r"
+
+commands:
+  no-permission: "&cJe hebt geen toestemming om dit commando te gebruiken."
+  only-players: "&cDit commando kan alleen door spelers worden uitgevoerd."
+  usage: "&eGebruik: /npc <create|remove|skin|dialogue|action|edit|reload>"
+  npc-created: "&aNPC '&f{name}&a' succesvol aangemaakt."
+  npc-removed: "&aNPC succesvol verwijderd."
+  npc-not-found: "&cNPC niet gevonden."
+  invalid-uuid: "&cOngeldig UUID."
+  config-reloaded: "&aConfiguratie succesvol herladen."
+  skin-changed: "&aNPC skin bijgewerkt."
+
+interactions:
+  default-greeting: "&fHallo, &e{player}&f! Hoe kan ik je helpen?"
+  default-farewell: "&fTot ziens, &e{player}&f!"
