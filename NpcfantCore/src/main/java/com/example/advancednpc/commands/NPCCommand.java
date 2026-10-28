@@ -45,7 +45,7 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
         "create", "remove", "clone", "move", "tp",
         "skin", "setskin", "name", "hologram", "pose", "equip",
         "glow", "invisible", "action", "visible", "reload",
-        "list", "info", "copy", "look", "animate", "nametag"
+        "list", "info", "copy", "look", "nametag"
     );
 
     @Override
@@ -304,30 +304,6 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
                 } else {
                     player.sendMessage(getPrefix() + ChatColor.RED + "NPC no encontrado.");
                 }
-                break;
-            }
-
-            case "animate": {
-                if (args.length < 2) {
-                    player.sendMessage(getPrefix() + ChatColor.RED + "Uso: /npcfant animate <uuid|nombre|nearest> [swing|crit|magic|damage]");
-                    return true;
-                }
-                Optional<NPCEntity> target = npcManager.resolveNPC(args[1], player);
-                if (target.isEmpty()) {
-                    player.sendMessage(getPrefix() + ChatColor.RED + "NPC no encontrado.");
-                    return true;
-                }
-                String anim = args.length >= 3 ? args[2].toLowerCase() : "swing";
-                var animTypes = com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityAnimation.EntityAnimationType.values();
-                var peAnim = switch (anim) {
-                    case "offhand" -> com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityAnimation.EntityAnimationType.SWING_OFF_HAND;
-                    case "damage", "hurt" -> com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityAnimation.EntityAnimationType.HURT;
-                    case "crit"    -> animTypes.length > 4 ? animTypes[4] : com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityAnimation.EntityAnimationType.SWING_MAIN_ARM;
-                    case "magic"   -> animTypes.length > 5 ? animTypes[5] : com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityAnimation.EntityAnimationType.SWING_MAIN_ARM;
-                    default        -> com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityAnimation.EntityAnimationType.SWING_MAIN_ARM;
-                };
-                target.get().getFakePlayer().playAnimation(peAnim);
-                player.sendMessage(getPrefix() + ChatColor.GREEN + "Animación '" + anim + "' ejecutada.");
                 break;
             }
 
@@ -694,7 +670,6 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
         player.sendMessage(ChatColor.YELLOW + "/npcfant nametag <npc>"              + ChatColor.GRAY + " — Alterna mostrar nametag");
         player.sendMessage(ChatColor.YELLOW + "/npcfant hologram <npc> <sub>"       + ChatColor.GRAY + " — Gestiona hologramas");
         player.sendMessage(ChatColor.YELLOW + "/npcfant pose <npc> <pose>"          + ChatColor.GRAY + " — Cambia la pose");
-        player.sendMessage(ChatColor.YELLOW + "/npcfant animate <npc> [anim]"       + ChatColor.GRAY + " — Reproduce una animación");
         player.sendMessage(ChatColor.YELLOW + "/npcfant equip <npc> <slot>"         + ChatColor.GRAY + " — Equipa el ítem en tu mano");
         player.sendMessage(ChatColor.YELLOW + "/npcfant glow <npc> <color|off>"     + ChatColor.GRAY + " — Activa/desactiva glow");
         player.sendMessage(ChatColor.YELLOW + "/npcfant invisible <npc>"            + ChatColor.GRAY + " — Alterna invisibilidad");
@@ -745,8 +720,6 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
                 case "hologram":
                 case "holo":
                     return Arrays.asList("add", "set", "insert", "removeline", "clear", "list");
-                case "animate":
-                    return Arrays.asList("swing", "offhand", "crit", "magic", "damage");
                 case "equip":
                     return Arrays.asList("helmet", "chestplate", "leggings", "boots", "mainhand", "offhand", "clear");
                 case "action":

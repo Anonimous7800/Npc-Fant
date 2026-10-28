@@ -96,15 +96,16 @@ public class NPCEditorGUI implements Listener {
         ));
 
         inv.setItem(13, makeItem(
-            Material.FEATHER,
-            "§d§lAnimaciones y Gestos",
-            "animations",
+            Material.COMMAND_BLOCK,
+            "§6§lComandos y Acciones al Clic",
+            "actions",
             Arrays.asList(
-                "§7Configura gestos interactivos y auto-saludo.",
+                "§7Configura qué comandos o acciones",
+                "§7ejecutará el NPC al recibir un clic.",
                 "",
-                "§fAuto-saludo al acercarse: " + (npc.isAutoWave() ? "§aActivado" : "§cDesactivado"),
+                "§fAcciones activas: §e" + (npc.getActionChain() != null ? npc.getActionChain().size() : 0),
                 "",
-                "§eClic para abrir el menú de animaciones"
+                "§eClic para abrir el editor de comandos"
             )
         ));
 
@@ -122,7 +123,7 @@ public class NPCEditorGUI implements Listener {
 
         String glow = npc.getGlowColor();
         boolean hasGlow = glow != null && !glow.isEmpty() && !glow.equalsIgnoreCase("off");
-        inv.setItem(16, makeItem(
+        inv.setItem(15, makeItem(
             Material.GLOWSTONE_DUST,
             "§6§lEfecto de Brillo (Glow)",
             "glow",
@@ -133,7 +134,7 @@ public class NPCEditorGUI implements Listener {
             )
         ));
 
-        inv.setItem(20, makeItem(
+        inv.setItem(16, makeItem(
             Material.DIAMOND_CHESTPLATE,
             "§a§lEquipamiento",
             "equip",
@@ -146,7 +147,7 @@ public class NPCEditorGUI implements Listener {
         ));
 
         boolean showNametag = npc.isShowNametag();
-        inv.setItem(22, makeItem(
+        inv.setItem(20, makeItem(
             Material.NAME_TAG,
             "§f§lVisibilidad del Nametag",
             "nametag",
@@ -158,7 +159,7 @@ public class NPCEditorGUI implements Listener {
         ));
 
         boolean invisible = npc.isInvisible();
-        inv.setItem(24, makeItem(
+        inv.setItem(22, makeItem(
             Material.GLASS_BOTTLE,
             "§7§lInvisibilidad",
             "invisible",
@@ -169,21 +170,7 @@ public class NPCEditorGUI implements Listener {
             )
         ));
 
-        inv.setItem(28, makeItem(
-            Material.COMMAND_BLOCK,
-            "§6§lComandos y Acciones al Clic",
-            "actions",
-            Arrays.asList(
-                "§7Configura qué comandos o acciones",
-                "§7ejecutará el NPC al recibir un clic.",
-                "",
-                "§fAcciones activas: §e" + (npc.getActionChain() != null ? npc.getActionChain().size() : 0),
-                "",
-                "§eClic para abrir el editor de comandos"
-            )
-        ));
-
-        inv.setItem(30, makeItem(
+        inv.setItem(24, makeItem(
             Material.COMPASS,
             "§e§lMover a mi posición",
             "move",
@@ -195,7 +182,7 @@ public class NPCEditorGUI implements Listener {
             )
         ));
 
-        inv.setItem(32, makeItem(
+        inv.setItem(31, makeItem(
             Material.BARRIER,
             "§c§lEliminar NPC",
             "delete",
@@ -271,11 +258,6 @@ public class NPCEditorGUI implements Listener {
                     player.sendMessage("§7Escribe §ccancel §7para cancelar.");
                     player.sendMessage("§8━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
                 }
-            }
-
-            case "animations" -> {
-                player.closeInventory();
-                plugin.getNPCAnimationGUI().openGUI(player, npc);
             }
 
             case "skin" -> {

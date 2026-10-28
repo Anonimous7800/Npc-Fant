@@ -54,7 +54,6 @@ public class NPCManager implements INPCManager, Listener {
     private final Map<UUID, NPCEntity> npcs = new LinkedHashMap<>();
     private final Map<Integer, NPCEntity> entityIdMap = new ConcurrentHashMap<>();
     private final Map<UUID, Long> lastInteractDebounce = new ConcurrentHashMap<>();
-    private final Map<UUID, Set<UUID>> autoWavedPlayers = new ConcurrentHashMap<>();
 
     public NPCManager(JavaPlugin plugin, HologramManager hologramManager,
                       CooldownManager cooldownManager) {
@@ -128,7 +127,6 @@ public class NPCManager implements INPCManager, Listener {
         Bukkit.getPluginManager().callEvent(interactEvent);
         if (interactEvent.isCancelled()) return;
 
-        npc.getFakePlayer().waveArm();
         npc.getActionChain().execute(player, npc.getId());
     }
 
@@ -178,23 +176,6 @@ public class NPCManager implements INPCManager, Listener {
                         }
                         if (npc.isLookAtPlayer() && distSq <= LOOK_AT_DISTANCE_SQ) {
                             npc.lookAtPlayer(player);
-                        }
-                        if (distSq <= 25.0) {
-                            if (npc.isConsecutiveWave()) {
-                                if (tickCounter % 16 == 0) {
-                                    npc.getFakePlayer().waveArm();
-                                }
-                            } else if (npc.isAutoWave()) {
-                                Set<UUID> waved = autoWavedPlayers.computeIfAbsent(npc.getId(), k -> ConcurrentHashMap.newKeySet());
-                                if (waved.add(pid)) {
-                                    npc.getFakePlayer().waveArm();
-                                }
-                            }
-                        } else if (distSq > 49.0) {
-                            Set<UUID> waved = autoWavedPlayers.get(npc.getId());
-                            if (waved != null) {
-                                waved.remove(pid);
-                            }
                         }
                     }
                 }
