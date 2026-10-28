@@ -51,11 +51,11 @@ public class NPCAnimationGUI implements Listener {
 
         inv.setItem(10, makeItem(
             Material.PLAYER_HEAD,
-            "§a§lSaludar con la mano (Swing Arm)",
+            "§a§lSaludar ahora (Levantar mano y agitar)",
             "swing_main",
             Arrays.asList(
-                "§7El NPC agita su brazo principal saludando",
-                "§7a los jugadores a su alrededor.",
+                "§7El NPC levanta su mano y la agita",
+                "§7saludando a los jugadores.",
                 "",
                 "§eClic para ejecutar animación"
             )
@@ -66,7 +66,7 @@ public class NPCAnimationGUI implements Listener {
             "§b§lSaludar con mano secundaria (Offhand)",
             "swing_off",
             Arrays.asList(
-                "§7El NPC mueve su mano izquierda.",
+                "§7El NPC levanta y mueve su mano izquierda.",
                 "",
                 "§eClic para ejecutar animación"
             )
@@ -78,20 +78,34 @@ public class NPCAnimationGUI implements Listener {
             "bow",
             Arrays.asList(
                 "§7El NPC realiza una reverencia breve",
-                "§7como saludo formal de respeto.",
+                "§7inclinando la cabeza y agachándose.",
                 "",
                 "§eClic para ejecutar animación"
             )
         ));
 
+        inv.setItem(13, makeItem(
+            Material.CLOCK,
+            "§6§lSaludo Consecutivo (Bucle Continuo)",
+            "toggle_consecutive",
+            Arrays.asList(
+                "§7El NPC saluda y levanta la mano",
+                "§7de forma continua y consecutiva",
+                "§7cada 3 segundos a los jugadores cercanos.",
+                "",
+                "§7Estado: " + (npc.isConsecutiveWave() ? "§aActivado (Consecutivo)" : "§cDesactivado"),
+                "",
+                "§eClic para alternar saludo continuo"
+            )
+        ));
+
         inv.setItem(14, makeItem(
             Material.BELL,
-            "§6§lAuto-saludo al acercarse",
+            "§e§lSaludo al Acercarse (Auto-Wave)",
             "toggle_wave",
             Arrays.asList(
-                "§7Saluda automáticamente con la mano",
-                "§7cuando un jugador se acerca a menos",
-                "§7de 4 bloques del NPC.",
+                "§7Saluda levantando la mano cuando",
+                "§7un jugador entra en su rango.",
                 "",
                 "§7Estado: " + (npc.isAutoWave() ? "§aActivado" : "§cDesactivado"),
                 "",
@@ -178,6 +192,13 @@ public class NPCAnimationGUI implements Listener {
             case "bow" -> {
                 npc.getFakePlayer().bow();
                 player.sendMessage("§a[NpcFant] ¡" + npc.getName() + " §arealizó una reverencia!");
+            }
+            case "toggle_consecutive" -> {
+                boolean newState = !npc.isConsecutiveWave();
+                npc.setConsecutiveWave(newState);
+                nm.saveNPC(npc);
+                player.sendMessage("§a[NpcFant] Saludo consecutivo continuo: " + (newState ? "§aActivado (Cada 3s)" : "§cDesactivado"));
+                openGUI(player, npc);
             }
             case "toggle_wave" -> {
                 boolean newState = !npc.isAutoWave();

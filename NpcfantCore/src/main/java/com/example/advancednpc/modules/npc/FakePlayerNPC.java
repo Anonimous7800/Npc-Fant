@@ -236,14 +236,47 @@ public class FakePlayerNPC {
         playAnimation(WrapperPlayServerEntityAnimation.EntityAnimationType.SWING_MAIN_ARM);
     }
 
+    public void setHandRaised(boolean raised) {
+        byte livingFlags = (byte) (raised ? 0x01 : 0x00);
+        List<EntityData<?>> meta = new ArrayList<>();
+        meta.add(new EntityData<>(8, EntityDataTypes.BYTE, livingFlags));
+        WrapperPlayServerEntityMetadata packet = new WrapperPlayServerEntityMetadata(entityId, meta);
+        for (UUID uid : new HashSet<>(spawnedFor)) {
+            Player p = Bukkit.getPlayer(uid);
+            if (p != null && p.isOnline()) {
+                PacketEvents.getAPI().getPlayerManager().sendPacket(p, packet);
+            }
+        }
+    }
+
+    public void setOffhandRaised(boolean raised) {
+        byte livingFlags = (byte) (raised ? 0x03 : 0x00);
+        List<EntityData<?>> meta = new ArrayList<>();
+        meta.add(new EntityData<>(8, EntityDataTypes.BYTE, livingFlags));
+        WrapperPlayServerEntityMetadata packet = new WrapperPlayServerEntityMetadata(entityId, meta);
+        for (UUID uid : new HashSet<>(spawnedFor)) {
+            Player p = Bukkit.getPlayer(uid);
+            if (p != null && p.isOnline()) {
+                PacketEvents.getAPI().getPlayerManager().sendPacket(p, packet);
+            }
+        }
+    }
+
     public void waveArm() {
+        setHandRaised(true);
         swingMainArm();
         Bukkit.getScheduler().runTaskLater(plugin, this::swingMainArm, 4L);
         Bukkit.getScheduler().runTaskLater(plugin, this::swingMainArm, 8L);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> setHandRaised(false), 16L);
     }
 
     public void swingOffHand() {
+        setOffhandRaised(true);
         playAnimation(WrapperPlayServerEntityAnimation.EntityAnimationType.SWING_OFF_HAND);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            playAnimation(WrapperPlayServerEntityAnimation.EntityAnimationType.SWING_OFF_HAND);
+        }, 5L);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> setOffhandRaised(false), 14L);
     }
 
     public void hurtAnimation() {
@@ -350,17 +383,71 @@ public class FakePlayerNPC {
                     new WrapperPlayServerEntityHeadLook(seatEntityId, yaw);
                 PacketEvents.getAPI().getPlayerManager().sendPacket(player, seatHead);
             } else {
-                WrapperPlayServerEntityTeleport tpPacket =
-                    new WrapperPlayServerEntityTeleport(entityId, new Vector3d(location.getX(), location.getY(), location.getZ()), yaw, pitch, true);
-                PacketEvents.getAPI().getPlayerManager().sendPacket(player, tpPacket);
+                if (!sendNativePositionSync(player, entityId, location, yaw, pitch)) {
+                    WrapperPlayServerEntityRotation rotPacket =
+                        new WrapperPlayServerEntityRotation(entityId, yaw, pitch, true);
+                    PacketEvents.getAPI().getPlayerManager().sendPacket(player, rotPacket);
+                }
             }
-            WrapperPlayServerEntityRotation rotPacket =
-                new WrapperPlayServerEntityRotation(entityId, yaw, pitch, true);
             WrapperPlayServerEntityHeadLook headLookPacket =
                 new WrapperPlayServerEntityHeadLook(entityId, yaw);
-            PacketEvents.getAPI().getPlayerManager().sendPacket(player, rotPacket);
             PacketEvents.getAPI().getPlayerManager().sendPacket(player, headLookPacket);
         } catch (Exception ignored) {}
+    }
+
+    private static volatile boolean nativeSyncInitialized = false;
+    private static java.lang.reflect.Constructor<?> nativeVec3Ctor;
+    private static java.lang.reflect.Method nativePosPathOfMethod;
+    private static java.lang.reflect.Constructor<?> nativeSyncPacketCtor;
+    private static java.lang.reflect.Method nativeGetHandleMethod;
+    private static java.lang.reflect.Field nativeConnectionField;
+    private static java.lang.reflect.Method nativeSendPacketMethod;
+
+    private static boolean initNativeSync() {
+        if (nativeSyncInitialized) return nativeSyncPacketCtor != null;
+        synchronized (FakePlayerNPC.class) {
+            if (nativeSyncInitialized) return nativeSyncPacketCtor != null;
+            try {
+                Class<?> vec3Class = Class.forName("net.minecraft.world.phys.Vec3");
+                nativeVec3Ctor = vec3Class.getConstructor(double.class, double.class, double.class);
+
+                Class<?> posPathClass = Class.forName("net.minecraft.world.entity.PositionPath");
+                nativePosPathOfMethod = posPathClass.getMethod("of", vec3Class);
+
+                Class<?> syncPacketClass = Class.forName("net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket");
+                nativeSyncPacketCtor = syncPacketClass.getConstructor(int.class, posPathClass, float.class, float.class, boolean.class);
+
+                Class<?> craftPlayerClass = Class.forName("org.bukkit.craftbukkit.entity.CraftPlayer");
+                nativeGetHandleMethod = craftPlayerClass.getMethod("getHandle");
+
+                Class<?> serverPlayerClass = Class.forName("net.minecraft.server.level.ServerPlayer");
+                nativeConnectionField = serverPlayerClass.getField("connection");
+
+                Class<?> packetClass = Class.forName("net.minecraft.network.protocol.Packet");
+                Class<?> connectionClass = Class.forName("net.minecraft.server.network.ServerCommonPacketListenerImpl");
+                nativeSendPacketMethod = connectionClass.getMethod("send", packetClass);
+            } catch (Throwable t) {
+                nativeSyncPacketCtor = null;
+            }
+            nativeSyncInitialized = true;
+            return nativeSyncPacketCtor != null;
+        }
+    }
+
+    private static boolean sendNativePositionSync(Player player, int entityId, Location loc, float yaw, float pitch) {
+        if (!initNativeSync()) return false;
+        try {
+            Object vec3 = nativeVec3Ctor.newInstance(loc.getX(), loc.getY(), loc.getZ());
+            Object posPath = nativePosPathOfMethod.invoke(null, vec3);
+            Object packet = nativeSyncPacketCtor.newInstance(entityId, posPath, yaw, pitch, true);
+
+            Object serverPlayer = nativeGetHandleMethod.invoke(player);
+            Object connection = nativeConnectionField.get(serverPlayer);
+            nativeSendPacketMethod.invoke(connection, packet);
+            return true;
+        } catch (Throwable ignored) {
+            return false;
+        }
     }
 
     private void spawnSeatForPlayer(Player player) {

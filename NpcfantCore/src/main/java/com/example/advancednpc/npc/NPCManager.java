@@ -128,6 +128,7 @@ public class NPCManager implements INPCManager, Listener {
         Bukkit.getPluginManager().callEvent(interactEvent);
         if (interactEvent.isCancelled()) return;
 
+        npc.getFakePlayer().waveArm();
         npc.getActionChain().execute(player, npc.getId());
     }
 
@@ -178,19 +179,21 @@ public class NPCManager implements INPCManager, Listener {
                         if (npc.isLookAtPlayer() && distSq <= LOOK_AT_DISTANCE_SQ) {
                             npc.lookAtPlayer(player);
                         }
-                        if (npc.isAutoWave()) {
-                            if (distSq <= 25.0) {
+                        if (distSq <= 25.0) {
+                            if (npc.isConsecutiveWave()) {
+                                if (tickCounter % 16 == 0) {
+                                    npc.getFakePlayer().waveArm();
+                                }
+                            } else if (npc.isAutoWave()) {
                                 Set<UUID> waved = autoWavedPlayers.computeIfAbsent(npc.getId(), k -> ConcurrentHashMap.newKeySet());
                                 if (waved.add(pid)) {
                                     npc.getFakePlayer().waveArm();
-                                } else if (tickCounter % 160 == 0) {
-                                    npc.getFakePlayer().swingMainArm();
                                 }
-                            } else if (distSq > 49.0) {
-                                Set<UUID> waved = autoWavedPlayers.get(npc.getId());
-                                if (waved != null) {
-                                    waved.remove(pid);
-                                }
+                            }
+                        } else if (distSq > 49.0) {
+                            Set<UUID> waved = autoWavedPlayers.get(npc.getId());
+                            if (waved != null) {
+                                waved.remove(pid);
                             }
                         }
                     }
