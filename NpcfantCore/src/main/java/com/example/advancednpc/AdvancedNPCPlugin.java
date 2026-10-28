@@ -12,6 +12,7 @@ import com.example.advancednpc.modules.interaction.CooldownManager;
 import com.example.advancednpc.modules.skin.NPCStorage;
 import com.example.advancednpc.modules.skin.SkinManager;
 import com.example.advancednpc.npc.NPCManager;
+import com.example.advancednpc.util.ProtocolPacketIdSync;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.manager.server.ServerManager;
 import com.github.retrooper.packetevents.manager.server.ServerVersion;
@@ -38,6 +39,10 @@ public class AdvancedNPCPlugin extends JavaPlugin {
 
     @Override
     public void onLoad() {
+        try {
+            java.io.File skinsDir = new java.io.File(getDataFolder(), "skins/custom");
+            if (!skinsDir.exists()) skinsDir.mkdirs();
+        } catch (Throwable ignored) {}
         patchPacketEventsVersionBeforeBuild();
         PacketEvents.setAPI(SpigotPacketEventsBuilder.build(this));
         patchPacketEventsServerManager();
@@ -45,6 +50,9 @@ public class AdvancedNPCPlugin extends JavaPlugin {
             .reEncodeByDefault(false)
             .checkForUpdates(false);
         PacketEvents.getAPI().load();
+        if (PacketEvents.getAPI().getServerManager().getVersion() == ServerVersion.getLatest()) {
+            ProtocolPacketIdSync.synchronize(getLogger());
+        }
     }
 
     private void patchPacketEventsVersionBeforeBuild() {

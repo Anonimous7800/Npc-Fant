@@ -741,6 +741,20 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
         if (args.length == 4 && sub.equals("action") && args[2].equalsIgnoreCase("add")) {
             return Arrays.asList("cmd", "console", "opcmd", "message", "sound", "server");
         }
+        if (args.length == 4 && sub.equals("skin")) {
+            String skinMode = args[2].toLowerCase();
+            if (skinMode.equals("preset")) {
+                return new ArrayList<>(plugin.getSkinManager().getPresetSkins().keySet());
+            } else if (skinMode.equals("file")) {
+                List<String> files = new ArrayList<>();
+                plugin.getSkinManager().getAllDisplayNames().keySet().forEach(k -> {
+                    if (k.startsWith("file:")) files.add(k.substring(5));
+                });
+                return files;
+            } else if (skinMode.equals("username")) {
+                return Bukkit.getOnlinePlayers().stream().map(Player::getName).collect(Collectors.toList());
+            }
+        }
         return Collections.emptyList();
     }
 }

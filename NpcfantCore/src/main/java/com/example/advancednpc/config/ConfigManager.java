@@ -43,6 +43,13 @@ public class ConfigManager {
                 plugin.getLogger().warning("No se pudo copiar skins/skins.yml: " + e.getMessage());
             }
         }
+        File exampleCustomSkin = new File(customSkinsFolder, "ejemplo_jugador.yml");
+        if (!exampleCustomSkin.exists()) {
+            try {
+                plugin.saveResource("skins/custom/ejemplo_jugador.yml", false);
+            } catch (Exception ignored) {
+            }
+        }
 
 
         File hologramsFolder = new File(dataFolder, "holograms");
