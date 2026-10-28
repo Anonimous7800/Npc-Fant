@@ -107,14 +107,25 @@ public class NPCPoseGUI implements Listener {
             )
         ));
 
-        inv.setItem(22, makeItem(
+        inv.setItem(21, makeItem(
             Material.TRIDENT,
-            "§d§lGiro Espín (SPIN_ATTACK)",
+            "§d§lGiro con Tridente (SPIN_ATTACK)",
             "SPIN_ATTACK",
             Arrays.asList(
-                "§7Postura de ataque giratorio con tridente.",
+                "§7Ataque giratorio Riptide con tridente.",
                 "",
                 (current == NPCPose.SPIN_ATTACK ? "§a✔ Pose actual" : "§eClic para seleccionar")
+            )
+        ));
+
+        inv.setItem(23, makeItem(
+            Material.TOTEM_OF_UNDYING,
+            "§c§lDerribado (DYING)",
+            "DYING",
+            Arrays.asList(
+                "§7Postura de jugador caído en el suelo.",
+                "",
+                (current == NPCPose.DYING ? "§a✔ Pose actual" : "§eClic para seleccionar")
             )
         ));
 

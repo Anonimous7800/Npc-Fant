@@ -57,6 +57,18 @@ public class NPCEditorGUI implements Listener {
         inv.setItem(27, border);
         inv.setItem(35, border);
 
+        inv.setItem(4, makeItem(
+            Material.PLAYER_HEAD,
+            "§b§lCambiar de NPC §7(Seleccionar otro)",
+            "select_npc",
+            Arrays.asList(
+                "§7Editando actualmente: §f" + npc.getName(),
+                "§7Total de NPCs creados: §e" + plugin.getNpcManager().getAllNPCs().size(),
+                "",
+                "§a▶ Clic para abrir el selector de NPCs"
+            )
+        ));
+
         NPCPose currentPose = npc.getPose();
         inv.setItem(10, makeItem(
             Material.ARMOR_STAND,
@@ -158,6 +170,20 @@ public class NPCEditorGUI implements Listener {
             )
         ));
 
+        inv.setItem(21, makeItem(
+            Material.OAK_SIGN,
+            "§d§l✦ Menú de Hologramas",
+            "holograms",
+            Arrays.asList(
+                "§7Configura líneas flotantes, colores",
+                "§7y textos informativos sobre el NPC.",
+                "",
+                "§fLíneas activas: §e" + (npc.getHologramLines() != null ? npc.getHologramLines().size() : 0),
+                "",
+                "§eClic para abrir el editor de hologramas"
+            )
+        ));
+
         boolean invisible = npc.isInvisible();
         inv.setItem(22, makeItem(
             Material.GLASS_BOTTLE,
@@ -239,6 +265,20 @@ public class NPCEditorGUI implements Listener {
         switch (action) {
             case "close" -> player.closeInventory();
 
+            case "select_npc" -> {
+                player.closeInventory();
+                if (plugin.getNpcManager().getSelectorGUI() != null) {
+                    plugin.getNpcManager().getSelectorGUI().openGUI(player);
+                }
+            }
+
+            case "holograms" -> {
+                player.closeInventory();
+                if (plugin.getNpcManager().getHologramGUI() != null) {
+                    plugin.getNpcManager().getHologramGUI().openGUI(player, npc);
+                }
+            }
+
             case "pose" -> {
                 player.closeInventory();
                 plugin.getNPCPoseGUI().openGUI(player, npc);
@@ -262,7 +302,7 @@ public class NPCEditorGUI implements Listener {
 
             case "skin" -> {
                 player.closeInventory();
-                plugin.getSkinMenuGUI().openMenu(player, 0);
+                plugin.getSkinMenuGUI().openMenuForNPC(player, npc, 0);
             }
 
             case "actions" -> {

@@ -41,6 +41,8 @@ public class AdvancedNPCPlugin extends JavaPlugin {
     private com.example.advancednpc.modules.gui.NPCPoseGUI      npcPoseGUI;
     private com.example.advancednpc.modules.gui.NPCGlowGUI      npcGlowGUI;
     private com.example.advancednpc.modules.gui.NPCNameColorGUI npcNameColorGUI;
+    private com.example.advancednpc.modules.gui.NPCHologramGUI  npcHologramGUI;
+    private com.example.advancednpc.modules.gui.NPCSelectorGUI  npcSelectorGUI;
     private NPCStorage         npcStorage;
 
     @Override
@@ -129,10 +131,14 @@ public class AdvancedNPCPlugin extends JavaPlugin {
         this.npcPoseGUI      = new com.example.advancednpc.modules.gui.NPCPoseGUI(this);
         this.npcGlowGUI      = new com.example.advancednpc.modules.gui.NPCGlowGUI(this);
         this.npcNameColorGUI = new com.example.advancednpc.modules.gui.NPCNameColorGUI(this);
+        this.npcHologramGUI  = new com.example.advancednpc.modules.gui.NPCHologramGUI(this);
+        this.npcSelectorGUI  = new com.example.advancednpc.modules.gui.NPCSelectorGUI(this);
 
         this.npcManager.setSkinManager(skinManager);
         this.npcManager.setStorage(npcStorage);
         this.npcManager.setEditorGUI(npcEditorGUI);
+        this.npcManager.setHologramGUI(npcHologramGUI);
+        this.npcManager.setSelectorGUI(npcSelectorGUI);
         NPCAdapter.setActiveManager(this.npcManager);
 
         getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
@@ -161,6 +167,8 @@ public class AdvancedNPCPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(npcPoseGUI, this);
         getServer().getPluginManager().registerEvents(npcGlowGUI, this);
         getServer().getPluginManager().registerEvents(npcNameColorGUI, this);
+        getServer().getPluginManager().registerEvents(npcHologramGUI, this);
+        getServer().getPluginManager().registerEvents(npcSelectorGUI, this);
 
         getServer().getScheduler().runTaskLater(this, () -> npcManager.loadAll(), 40L);
 
@@ -198,5 +206,7 @@ public class AdvancedNPCPlugin extends JavaPlugin {
     public com.example.advancednpc.modules.gui.NPCPoseGUI   getNPCPoseGUI()   { return npcPoseGUI; }
     public com.example.advancednpc.modules.gui.NPCGlowGUI   getNPCGlowGUI()   { return npcGlowGUI; }
     public com.example.advancednpc.modules.gui.NPCNameColorGUI getNPCNameColorGUI() { return npcNameColorGUI; }
+    public com.example.advancednpc.modules.gui.NPCHologramGUI  getNPCHologramGUI()  { return npcHologramGUI; }
+    public com.example.advancednpc.modules.gui.NPCSelectorGUI  getNPCSelectorGUI()  { return npcSelectorGUI; }
     public NPCStorage         getNpcStorage()          { return npcStorage; }
 }

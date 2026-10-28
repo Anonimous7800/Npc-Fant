@@ -26,6 +26,7 @@ public final class ProtocolPacketIdSync {
         mapClient("bundle", PacketType.Play.Server.BUNDLE);
         mapClient("add_entity", PacketType.Play.Server.SPAWN_ENTITY);
         mapClient("animate", PacketType.Play.Server.ENTITY_ANIMATION);
+        mapClient("swing_animation", PacketType.Play.Server.ENTITY_ANIMATION);
         mapClient("award_stats", PacketType.Play.Server.STATISTICS);
         mapClient("block_changed_ack", PacketType.Play.Server.ACKNOWLEDGE_BLOCK_CHANGES);
         mapClient("block_destruction", PacketType.Play.Server.BLOCK_BREAK_ANIMATION);
@@ -230,6 +231,8 @@ public final class ProtocolPacketIdSync {
         mapServer("sign_update", PacketType.Play.Client.UPDATE_SIGN);
         mapServer("spectate_entity", PacketType.Play.Client.SPECTATE_ENTITY);
         mapServer("swing", PacketType.Play.Client.ANIMATION);
+        mapServer("punch", PacketType.Play.Client.ANIMATION);
+        mapServer("spectator_action", PacketType.Play.Client.SPECTATE_ENTITY);
         mapServer("teleport_to_entity", PacketType.Play.Client.SPECTATE);
         mapServer("test_instance_block_action", PacketType.Play.Client.TEST_INSTANCE_BLOCK_ACTION);
         mapServer("use_item_on", PacketType.Play.Client.PLAYER_BLOCK_PLACEMENT);
@@ -263,14 +266,7 @@ public final class ProtocolPacketIdSync {
                 extractFromObject(root, clientboundIds, serverboundIds, visited, 0);
             }
 
-            if (clientboundIds.containsKey("add_entity") && clientboundIds.get("add_entity") == 0) {
-                Map<String, Integer> shifted = new HashMap<>();
-                shifted.put("bundle_delimiter", 0);
-                for (Map.Entry<String, Integer> e : clientboundIds.entrySet()) {
-                    shifted.put(e.getKey(), e.getValue() + 1);
-                }
-                clientboundIds = shifted;
-            }
+            // Las IDs obtenidas directamente de NMS GameProtocols ya corresponden a la numeración oficial del protocolo.
 
             int updatedClient = 0;
             int updatedServer = 0;
@@ -484,17 +480,12 @@ public final class ProtocolPacketIdSync {
                 versionMap.put(id, pt);
                 count++;
             } else {
-                versionMap.put(id, PacketType.Play.Server.MAP_CHUNK_BULK);
                 unmapped.add(entry.getKey() + "=" + id);
             }
         }
 
-        for (int id = 0; id < 256; id++) {
-            versionMap.putIfAbsent(id, PacketType.Play.Server.MAP_CHUNK_BULK);
-        }
-
         if (logger != null && !unmapped.isEmpty()) {
-            logger.info("Paquetes Clientbound 26.3 nuevos mapeados como passthrough: " + unmapped);
+            logger.info("Paquetes Clientbound 26.3 no mapeados (passthrough nativo): " + unmapped);
         }
         return count;
     }
@@ -530,17 +521,12 @@ public final class ProtocolPacketIdSync {
                 versionMap.put(id, pt);
                 count++;
             } else {
-                versionMap.put(id, PacketType.Play.Client.TELEPORT_CONFIRM);
                 unmapped.add(entry.getKey() + "=" + id);
             }
         }
 
-        for (int id = 0; id < 256; id++) {
-            versionMap.putIfAbsent(id, PacketType.Play.Client.TELEPORT_CONFIRM);
-        }
-
         if (logger != null && !unmapped.isEmpty()) {
-            logger.info("Paquetes Serverbound 26.3 nuevos mapeados como passthrough: " + unmapped);
+            logger.info("Paquetes Serverbound 26.3 no mapeados (passthrough nativo): " + unmapped);
         }
         return count;
     }

@@ -42,7 +42,7 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
     }
 
     private static final List<String> SUB_COMMANDS = Arrays.asList(
-        "create", "remove", "clone", "move", "tp",
+        "gui", "menu", "editor", "create", "remove", "clone", "move", "tp",
         "skin", "setskin", "name", "hologram", "pose", "equip",
         "glow", "invisible", "action", "visible", "reload",
         "list", "info", "copy", "look", "nametag"
@@ -61,6 +61,38 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
         }
 
         switch (args[0].toLowerCase()) {
+
+            case "gui":
+            case "menu":
+            case "editor": {
+                if (args.length >= 2) {
+                    Optional<NPCEntity> target = npcManager.resolveNPC(args[1], player);
+                    if (target.isPresent()) {
+                        if (npcManager.getEditorGUI() != null) {
+                            npcManager.getEditorGUI().openEditor(player, target.get());
+                        }
+                    } else {
+                        player.sendMessage(getPrefix() + ChatColor.RED + "NPC no encontrado.");
+                    }
+                    return true;
+                }
+                var allNpcs = npcManager.getAllNPCs();
+                if (allNpcs.isEmpty()) {
+                    player.sendMessage(getPrefix() + ChatColor.RED + "No hay NPCs creados. Usa " + ChatColor.YELLOW + "/nfant create <nombre>" + ChatColor.RED + " para crear uno.");
+                    return true;
+                }
+                if (allNpcs.size() == 1) {
+                    NPCEntity single = (NPCEntity) allNpcs.iterator().next();
+                    if (npcManager.getEditorGUI() != null) {
+                        npcManager.getEditorGUI().openEditor(player, single);
+                    }
+                } else {
+                    if (npcManager.getSelectorGUI() != null) {
+                        npcManager.getSelectorGUI().openGUI(player);
+                    }
+                }
+                break;
+            }
 
             case "create": {
                 if (args.length < 2) {
@@ -190,8 +222,21 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
 
             case "hologram":
             case "holo": {
+                if (args.length >= 2 && args[1].equalsIgnoreCase("gui")) {
+                    String targetArg = args.length >= 3 ? args[2] : "nearest";
+                    Optional<NPCEntity> target = npcManager.resolveNPC(targetArg, player);
+                    if (target.isPresent()) {
+                        if (npcManager.getHologramGUI() != null) {
+                            npcManager.getHologramGUI().openGUI(player, target.get());
+                        }
+                    } else {
+                        player.sendMessage(getPrefix() + ChatColor.RED + "NPC no encontrado.");
+                    }
+                    return true;
+                }
                 if (args.length < 2) {
-                    player.sendMessage(getPrefix() + ChatColor.RED + "Uso: /npcfant hologram <uuid|nombre|nearest> <add|set|remove|list> [texto]");
+                    player.sendMessage(getPrefix() + ChatColor.RED + "Uso: /npcfant hologram <uuid|nombre|nearest> <add|set|remove|list|gui> [texto]");
+                    player.sendMessage(getPrefix() + ChatColor.YELLOW + "Para abrir el editor visual: /npcfant hologram gui");
                     player.sendMessage(getPrefix() + ChatColor.YELLOW + "Para hologramas en el mapa: /holo <create|remove|add|set|list|tp|move>");
                     return true;
                 }

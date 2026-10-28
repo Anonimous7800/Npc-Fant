@@ -3,6 +3,7 @@ package com.example.advancednpc.commands;
 import com.example.advancednpc.AdvancedNPCPlugin;
 import com.example.advancednpc.modules.hologram.Hologram;
 import com.example.advancednpc.modules.hologram.HologramManager;
+import com.example.advancednpc.npc.NPCEntity;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
@@ -47,6 +48,18 @@ public class HoloCommand implements CommandExecutor, TabCompleter {
 
         String sub = args[0].toLowerCase();
         switch (sub) {
+            case "gui":
+            case "menu": {
+                Optional<NPCEntity> target = plugin.getNpcManager().getNearestNPC(player.getLocation(), 15.0);
+                if (target.isPresent()) {
+                    if (plugin.getNpcManager().getHologramGUI() != null) {
+                        plugin.getNpcManager().getHologramGUI().openGUI(player, target.get());
+                    }
+                } else {
+                    player.sendMessage(getPrefix() + "§cNo hay ningún NPC cercano para abrir el editor de hologramas visual.");
+                }
+                break;
+            }
             case "create": {
                 if (args.length < 2) {
                     player.sendMessage(getPrefix() + "§cUso: /" + label + " create <nombre> [texto inicial...]");

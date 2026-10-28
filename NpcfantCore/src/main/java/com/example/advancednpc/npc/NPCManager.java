@@ -47,6 +47,8 @@ public class NPCManager implements INPCManager, Listener {
     private       SkinManager     skinManager;
     private       NPCStorage      storage;
     private       com.example.advancednpc.modules.gui.NPCEditorGUI editorGUI;
+    private       com.example.advancednpc.modules.gui.NPCHologramGUI hologramGUI;
+    private       com.example.advancednpc.modules.gui.NPCSelectorGUI selectorGUI;
     private       BukkitTask      trackerTask;
     private       PacketListenerAbstract packetListener;
     private       int             tickCounter = 0;
@@ -68,6 +70,12 @@ public class NPCManager implements INPCManager, Listener {
     public void setStorage(NPCStorage s)       { this.storage = s; }
     public void setEditorGUI(com.example.advancednpc.modules.gui.NPCEditorGUI eg) { this.editorGUI = eg; }
     public com.example.advancednpc.modules.gui.NPCEditorGUI getEditorGUI() { return editorGUI; }
+
+    public void setHologramGUI(com.example.advancednpc.modules.gui.NPCHologramGUI hg) { this.hologramGUI = hg; }
+    public com.example.advancednpc.modules.gui.NPCHologramGUI getHologramGUI() { return hologramGUI; }
+
+    public void setSelectorGUI(com.example.advancednpc.modules.gui.NPCSelectorGUI sg) { this.selectorGUI = sg; }
+    public com.example.advancednpc.modules.gui.NPCSelectorGUI getSelectorGUI() { return selectorGUI; }
 
     private void registerPacketListener() {
         this.packetListener = new PacketListenerAbstract(PacketListenerPriority.NORMAL) {
@@ -189,6 +197,8 @@ public class NPCManager implements INPCManager, Listener {
             case SNEAKING           -> 1.75;
             case SITTING            -> 1.50;
             case SLEEPING, SWIMMING -> 0.70;
+            case DYING              -> 0.50;
+            case SPIN_ATTACK        -> 2.10;
             default                 -> 2.05;
         };
         return entity.getLocation().clone().add(0, yOffset, 0);

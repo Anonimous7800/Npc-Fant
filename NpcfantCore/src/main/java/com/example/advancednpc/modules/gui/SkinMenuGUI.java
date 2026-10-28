@@ -48,8 +48,8 @@ public class SkinMenuGUI implements Listener {
 
 
     private final Map<UUID, Integer> playerPages = new HashMap<>();
-
     private final Map<UUID, List<Map.Entry<String, SkinData>>> playerSkinList = new HashMap<>();
+    private final Map<UUID, UUID> targetNpcMap = new java.util.concurrent.ConcurrentHashMap<>();
 
     public SkinMenuGUI(AdvancedNPCPlugin plugin) {
         this.plugin      = plugin;
@@ -94,6 +94,18 @@ public class SkinMenuGUI implements Listener {
 
 
     public void openMenu(Player player, int page) {
+        openMenu(player, page, null);
+    }
+
+    public void openMenuForNPC(Player player, NPCEntity npc, int page) {
+        if (player == null || !player.isOnline()) return;
+        if (npc != null) {
+            targetNpcMap.put(player.getUniqueId(), npc.getId());
+        }
+        openMenu(player, page);
+    }
+
+    private void openMenu(Player player, int page, Void unused) {
         SkinManager skinManager = plugin.getNpcManager().getSkinManager();
         if (skinManager == null) {
             player.sendMessage(ChatColor.RED + "[NpcFant] SkinManager no disponible.");
@@ -247,15 +259,23 @@ public class SkinMenuGUI implements Listener {
 
 
         NPCManager nm = plugin.getNpcManager();
-        Optional<NPCEntity> closest = nm.getNearestNPC(player.getLocation(), INTERACTION_DIST);
-        if (!closest.isPresent()) {
+        NPCEntity npc = null;
+        UUID targetId = targetNpcMap.remove(player.getUniqueId());
+        if (targetId != null) {
+            npc = (NPCEntity) nm.getNPC(targetId);
+        }
+        if (npc == null) {
+            Optional<NPCEntity> closest = nm.getNearestNPC(player.getLocation(), INTERACTION_DIST);
+            if (closest.isPresent()) {
+                npc = closest.get();
+            }
+        }
+        if (npc == null) {
             player.sendMessage(ChatColor.RED + "[NpcFant] No hay ningún NPC cerca (≤" +
                 (int) INTERACTION_DIST + " bloques).");
             player.closeInventory();
             return;
         }
-
-        NPCEntity npc = closest.get();
         player.sendMessage(ChatColor.YELLOW + "[NpcFant] Aplicando skin '" +
             skinKey + "' al NPC '" + npc.getName() + "'...");
         player.closeInventory();

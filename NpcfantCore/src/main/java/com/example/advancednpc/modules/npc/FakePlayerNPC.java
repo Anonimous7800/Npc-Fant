@@ -409,7 +409,7 @@ public class FakePlayerNPC {
 
             List<EntityData<?>> seatMeta = new ArrayList<>();
             seatMeta.add(new EntityData<>(0, EntityDataTypes.BYTE, (byte) 0x20));
-            seatMeta.add(new EntityData<>(15, EntityDataTypes.BYTE, (byte) 0x10));
+            seatMeta.add(new EntityData<>(15, EntityDataTypes.BYTE, (byte) (0x10 | 0x08 | 0x01)));
             WrapperPlayServerEntityMetadata metaSeatPacket = new WrapperPlayServerEntityMetadata(seatEntityId, seatMeta);
             PacketEvents.getAPI().getPlayerManager().sendPacket(player, metaSeatPacket);
 
@@ -576,9 +576,14 @@ public class FakePlayerNPC {
 
             byte flags = 0;
             if (pose == NPCPose.SNEAKING) flags |= 0x02;
+            if (pose == NPCPose.SWIMMING) flags |= 0x10;
             if (invisible)                flags |= 0x20;
             if (glowing)                  flags |= 0x40;
             baseMetadata.add(new EntityData<>(0, EntityDataTypes.BYTE, flags));
+
+            byte livingFlags = 0;
+            if (pose == NPCPose.SPIN_ATTACK) livingFlags |= 0x04;
+            baseMetadata.add(new EntityData<>(8, EntityDataTypes.BYTE, livingFlags));
 
             EntityPose pePose = switch (pose) {
                 case SNEAKING    -> EntityPose.CROUCHING;
@@ -614,7 +619,11 @@ public class FakePlayerNPC {
         if (equipment == null) return;
         try {
             List<Equipment> eqList = new ArrayList<>();
-            eqList.add(new Equipment(EquipmentSlot.MAIN_HAND,   toPeItem(equipment.getMainHand())));
+            org.bukkit.inventory.ItemStack mainHand = equipment.getMainHand();
+            if ((mainHand == null || mainHand.getType().isAir()) && pose == NPCPose.SPIN_ATTACK) {
+                mainHand = new org.bukkit.inventory.ItemStack(org.bukkit.Material.TRIDENT);
+            }
+            eqList.add(new Equipment(EquipmentSlot.MAIN_HAND,   toPeItem(mainHand)));
             eqList.add(new Equipment(EquipmentSlot.OFF_HAND,    toPeItem(equipment.getOffHand())));
             eqList.add(new Equipment(EquipmentSlot.HELMET,      toPeItem(equipment.getHelmet())));
             eqList.add(new Equipment(EquipmentSlot.CHEST_PLATE, toPeItem(equipment.getChestplate())));
