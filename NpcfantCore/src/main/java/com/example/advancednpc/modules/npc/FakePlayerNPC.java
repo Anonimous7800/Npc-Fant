@@ -305,13 +305,13 @@ public class FakePlayerNPC {
     }
 
     private void sendMetadataPacket(Player player) {
-        List<EntityData> metadata = new ArrayList<>();
+        List<EntityData<?>> metadata = new ArrayList<>();
 
         byte flags = 0;
         if (pose == NPCPose.SNEAKING) flags |= 0x02;
         if (invisible)                flags |= 0x20;
         if (glowing)                  flags |= 0x40;
-        metadata.add(new EntityData(0, EntityDataTypes.BYTE, flags));
+        metadata.add(new EntityData<>(0, EntityDataTypes.BYTE, flags));
 
         EntityPose pePose = switch (pose) {
             case SNEAKING    -> EntityPose.CROUCHING;
@@ -322,15 +322,15 @@ public class FakePlayerNPC {
             case SITTING     -> EntityPose.SITTING;
             default          -> EntityPose.STANDING;
         };
-        metadata.add(new EntityData(6, EntityDataTypes.ENTITY_POSE, pePose));
+        metadata.add(new EntityData<>(6, EntityDataTypes.ENTITY_POSE, pePose));
 
         if (npcType == NPCType.PLAYER) {
-            metadata.add(new EntityData(17, EntityDataTypes.BYTE, (byte) 0x7F));
+            metadata.add(new EntityData<>(17, EntityDataTypes.BYTE, (byte) 0x7F));
         } else if (showNametag && name != null && !name.isEmpty()) {
             Component customName = LegacyComponentSerializer.legacySection()
                 .deserialize(ChatColor.translateAlternateColorCodes('&', name));
-            metadata.add(new EntityData(2, EntityDataTypes.OPTIONAL_ADV_COMPONENT, Optional.of(customName)));
-            metadata.add(new EntityData(3, EntityDataTypes.BOOLEAN, true));
+            metadata.add(new EntityData<>(2, EntityDataTypes.OPTIONAL_ADV_COMPONENT, Optional.of(customName)));
+            metadata.add(new EntityData<>(3, EntityDataTypes.BOOLEAN, true));
         }
 
         WrapperPlayServerEntityMetadata metaPacket =

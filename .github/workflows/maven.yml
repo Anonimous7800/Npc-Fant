@@ -43,31 +43,29 @@ jobs:
       - name: Send Build Status & Errors to Discord
         if: always()
         env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK || 'https://discord.com/api/webhooks/1564829859555840121/DIUDWfay1l5zG3k2UlU2hpnYzc6endSjE3slI658Dlh9PRmRJkhSctNaC1yyrAmc6Bv6' }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DEFAULT_WEBHOOK: "https://discord.com/api/webhooks/1564829859555840121/DIUDWfay1l5zG3k2UlU2hpnYzc6endSjE3slI658Dlh9PRmRJkhSctNaC1yyrAmc6Bv6"
           BUILD_OUTCOME: ${{ steps.maven_build.outcome }}
           REPO_NAME: ${{ github.repository }}
           COMMIT_SHA: ${{ github.sha }}
           COMMIT_ACTOR: ${{ github.actor }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          if [ -z "$DISCORD_WEBHOOK" ]; then
-            echo "Aviso: El secret DISCORD_WEBHOOK no esta configurado en GitHub Settings -> Secrets -> Actions."
-            exit 0
-          fi
+          WEBHOOK_URL="${DISCORD_WEBHOOK:-$DEFAULT_WEBHOOK}"
 
           if [ "$BUILD_OUTCOME" == "success" ]; then
             STATUS_TITLE="✅ Build Exitoso — Npc-Fant"
             COLOR=3066993
-            DESCRIPTION="El proyecto **${REPO_NAME}** compilo correctamente en GitHub Actions.\n🔗 [Ver ejecucion en GitHub](${RUN_URL})\n💬 [Canal de Discord](https://discord.com/channels/1132409994793451714/1449152297753116754)"
+            DESCRIPTION=$(printf "El proyecto **%s** compiló correctamente en GitHub Actions.\n🔗 [Ver ejecución en GitHub](%s)\n💬 [Ir al canal de Discord](https://discord.com/channels/1132409994793451714/1449152297753116754)" "$REPO_NAME" "$RUN_URL")
           else
             STATUS_TITLE="❌ Error en Build de Maven — Npc-Fant"
             COLOR=15158332
-            ERROR_LOGS=$(grep -E "\[ERROR\]" build.log | tail -n 20 || tail -n 20 build.log)
+            ERROR_LOGS=$(grep -E "\[ERROR\]" build.log | tail -n 18 || true)
             if [ -z "$ERROR_LOGS" ]; then
-              ERROR_LOGS=$(tail -n 20 build.log)
+              ERROR_LOGS=$(tail -n 18 build.log || true)
             fi
-            ERROR_LOGS=$(echo "$ERROR_LOGS" | cut -c 1-1500)
-            DESCRIPTION="Fallo la compilacion en **${REPO_NAME}**.\n🔗 [Ver ejecucion en GitHub](${RUN_URL})\n\n**Errores detectados:**\n\`\`\`\n${ERROR_LOGS}\n\`\`\`"
+            ERROR_LOGS=$(printf "%s" "$ERROR_LOGS" | cut -c 1-1400)
+            DESCRIPTION=$(printf "Falló la compilación en **%s**.\n🔗 [Ver ejecución en GitHub](%s)\n\n**Errores detectados:**\n\`\`\`\n%s\n\`\`\`" "$REPO_NAME" "$RUN_URL" "$ERROR_LOGS")
           fi
 
           jq -n \
@@ -88,13 +86,15 @@ jobs:
               }]
             }' > payload.json
 
-          curl -s -H "Content-Type: application/json" -X POST -d @payload.json "$DISCORD_WEBHOOK"
-
-      - name: Fail Job if Maven Build Failed
-        if: steps.maven_build.outcome != 'success'
-        run: exit 1
+          curl -sS -H "Content-Type: application/json" -X POST -d @payload.json "$WEBHOOK_URL" || true
 
       - name: Update dependency graph
         if: steps.maven_build.outcome == 'success'
         uses: advanced-security/maven-dependency-submission-action@v4
 
+      - name: Check Maven Build Result
+        if: steps.maven_build.outcome != 'success'
+        run: |
+          echo "=== MAVEN BUILD ERRORS ==="
+          grep -E "\[ERROR\]" build.log || tail -n 30 build.log
+          exit 1
