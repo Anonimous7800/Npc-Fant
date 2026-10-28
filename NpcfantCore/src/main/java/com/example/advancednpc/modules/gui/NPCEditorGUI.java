@@ -193,7 +193,6 @@ public class NPCEditorGUI implements Listener {
         event.setCancelled(true);
         if (action == null) return;
 
-        UUID npcId = editingNpcMap.get(player.getUniqueId());
         if (npcId == null) {
             player.closeInventory();
             return;
