@@ -1,9 +1,11 @@
 package com.example.advancednpc.api;
 
+import com.example.advancednpc.api.action.INPCAction;
 import org.bukkit.Location;
 import org.bukkit.entity.EntityType;
 
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
 
 public class NPCBuilder {
 
@@ -18,8 +20,8 @@ public class NPCBuilder {
     private String glowColor;
     private boolean invisible = false;
     private boolean lookAtPlayer = true;
-    private final java.util.List<String> hologramLines = new java.util.ArrayList<>();
-    private final java.util.List<com.example.advancednpc.api.action.INPCAction> actions = new java.util.ArrayList<>();
+    private final List<String> hologramLines = new ArrayList<>();
+    private final List<INPCAction> actions = new ArrayList<>();
 
     public enum Pose {
         STANDING, SITTING, SNEAKING, SLEEPING
@@ -85,11 +87,10 @@ public class NPCBuilder {
         return this;
     }
 
-    public NPCBuilder action(com.example.advancednpc.api.action.INPCAction action) {
+    public NPCBuilder action(INPCAction action) {
         this.actions.add(action);
         return this;
     }
-
 
     public String getName() { return name; }
     public EntityType getEntityType() { return entityType; }
@@ -102,13 +103,17 @@ public class NPCBuilder {
     public String getGlowColor() { return glowColor; }
     public boolean isInvisible() { return invisible; }
     public boolean isLookAtPlayer() { return lookAtPlayer; }
-    public java.util.List<String> getHologramLines() { return hologramLines; }
-    public java.util.List<com.example.advancednpc.api.action.INPCAction> getActions() { return actions; }
-
+    public List<String> getHologramLines() { return hologramLines; }
+    public List<INPCAction> getActions() { return actions; }
 
     public INPC build() {
-        if (location == null) throw new IllegalStateException("Location no puede ser null");
-
-        throw new UnsupportedOperationException("Usa NpcfantAPI.createNPC(NPCBuilder) en su lugar");
+        if (location == null) {
+            throw new IllegalStateException("Location no puede ser null");
+        }
+        INPCManager manager = NPCAdapter.getActiveManager();
+        if (manager == null) {
+            throw new IllegalStateException("NpcFant no esta inicializado aun");
+        }
+        return manager.createNPC(name, location);
     }
 }

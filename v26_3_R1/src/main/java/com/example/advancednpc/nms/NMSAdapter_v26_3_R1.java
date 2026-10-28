@@ -1,29 +1,36 @@
 package com.example.advancednpc.nms;
 
 import com.example.advancednpc.api.INPC;
+import com.example.advancednpc.api.INPCManager;
 import com.example.advancednpc.api.NPCAdapter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 
 public class NMSAdapter_v26_3_R1 extends NPCAdapter {
 
+    private static final String TARGET_VERSION = "v26_3_R1";
+
     @Override
     public INPC spawnNPC(String name, Location location) {
-
-        throw new UnsupportedOperationException(
-            "Adaptador NMS no implementado aun para v26_3_R1. Compila con BuildTools primero.");
+        INPCManager manager = NPCAdapter.getActiveManager();
+        if (manager == null) {
+            throw new IllegalStateException("NpcFant manager no esta activo.");
+        }
+        return manager.createNPC(name, location);
     }
 
     @Override
     public boolean isSupported() {
         try {
-            String ver = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
-            return ver.equals("v26_3_R1");
-        } catch (Exception e) {
-
-            String minecraftVersion = Bukkit.getServer().getBukkitVersion();
-            return minecraftVersion.startsWith("26.3-SNAPSHOT".replace("-R0.1-SNAPSHOT","").replace("-SNAPSHOT",""));
-        }
+            String pkg = Bukkit.getServer().getClass().getPackage().getName();
+            String[] parts = pkg.split("\\.");
+            if (parts.length > 3) {
+                return parts[3].equalsIgnoreCase(TARGET_VERSION);
+            }
+        } catch (Exception ignored) {}
+        String bukkitVer = Bukkit.getServer().getBukkitVersion();
+        String prefix = TARGET_VERSION.substring(1).replace("_R", ".").split("\\.")[0]
+            + "." + TARGET_VERSION.substring(1).split("_")[1];
+        return bukkitVer != null && bukkitVer.startsWith(prefix);
     }
 }
-

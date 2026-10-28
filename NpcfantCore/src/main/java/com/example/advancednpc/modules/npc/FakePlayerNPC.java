@@ -4,6 +4,7 @@ import com.example.advancednpc.modules.animation.NPCPose;
 import com.example.advancednpc.modules.equipment.NPCEquipment;
 import com.example.advancednpc.modules.skin.SkinData;
 import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.manager.server.ServerVersion;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
 import com.github.retrooper.packetevents.protocol.entity.pose.EntityPose;
@@ -34,13 +35,7 @@ public class FakePlayerNPC {
 
     private static final AtomicInteger NEXT_ENTITY_ID = new AtomicInteger(100000);
 
-    public static final String STEVE_VALUE =
-        "ewogICJ0aW1lc3RhbXAiIDogMTcxMDAwMDAwMDAwMCwKICAicHJvZmlsZUlkIiA6" +
-        "ICIwNjlhNzllNTRkODQ0MDY1YWE2ODU5MjZhNjQxMDdhYiIsCiAgInByb2ZpbGVOYW1lIiA6" +
-        "ICJTdGV2ZSIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6" +
-        "IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVj" +
-        "cmFmdC5uZXQvdGV4dHVyZS82MGEzNWFiMWM3MDI0MzQ0OWVmZTZiM2EwYzYwY2ExOWVhNTk4" +
-        "MmI3NDZhMzYzNWEzYzRlM2VjMjZhNjZlIgogICAgfQogIH0KfQ==";
+    public static final String STEVE_VALUE     = "";
     public static final String STEVE_SIGNATURE = "";
 
     private final int          entityId;
@@ -69,7 +64,7 @@ public class FakePlayerNPC {
 
     public void spawnForAll() {
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (p.getWorld().equals(location.getWorld())) {
+            if (location.getWorld() != null && p.getWorld().equals(location.getWorld())) {
                 spawnForPlayer(p);
             }
         }
@@ -97,11 +92,14 @@ public class FakePlayerNPC {
                         sendMetadataPacket(player);
                         sendEquipmentPackets(player);
 
-                        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                            if (player.isOnline()) {
-                                sendRemoveFromTabList(player);
-                            }
-                        }, 40L);
+                        ServerVersion ver = PacketEvents.getAPI().getServerManager().getVersion();
+                        if (ver.isOlderThan(ServerVersion.V_1_19_3)) {
+                            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                                if (player.isOnline()) {
+                                    sendRemoveFromTabList(player);
+                                }
+                            }, 40L);
+                        }
                     } catch (Exception e) {
                         spawnedFor.remove(player.getUniqueId());
                         plugin.getLogger().warning("[NpcFant] Error al spawnear NPC para " +
@@ -203,7 +201,7 @@ public class FakePlayerNPC {
                     new Vector3d(newLocation.getX(), newLocation.getY(), newLocation.getZ()),
                     newLocation.getYaw(),
                     newLocation.getPitch(),
-                    false
+                    true
                 );
                 PacketEvents.getAPI().getPlayerManager().sendPacket(p, teleportPacket);
                 sendRotationPackets(p, newLocation.getYaw(), newLocation.getPitch());
@@ -243,7 +241,7 @@ public class FakePlayerNPC {
     private String getSafeProfileName() {
         String colored = ChatColor.translateAlternateColorCodes('&', name);
         String stripped = ChatColor.stripColor(colored);
-        if (stripped == null || stripped.isEmpty()) {
+        if (stripped == null || stripped.trim().isEmpty()) {
             stripped = "NPC_" + (entityId % 10000);
         }
         stripped = stripped.replaceAll("[^a-zA-Z0-9_]", "_");
@@ -253,13 +251,18 @@ public class FakePlayerNPC {
         return stripped;
     }
 
+    private boolean hasValidSignedTexture() {
+        return skinData != null
+            && skinData.getValue() != null
+            && !skinData.getValue().trim().isEmpty()
+            && skinData.getSignature() != null
+            && !skinData.getSignature().trim().isEmpty();
+    }
+
     private void sendAddToTabList(Player player) {
         List<TextureProperty> textures = new ArrayList<>();
-        if (skinData != null && skinData.getValue() != null && !skinData.getValue().isEmpty()) {
-            String sig = (skinData.getSignature() != null && !skinData.getSignature().isEmpty())
-                ? skinData.getSignature()
-                : null;
-            textures.add(new TextureProperty("textures", skinData.getValue(), sig));
+        if (hasValidSignedTexture()) {
+            textures.add(new TextureProperty("textures", skinData.getValue(), skinData.getSignature()));
         }
 
         String profileName = getSafeProfileName();
@@ -270,7 +273,9 @@ public class FakePlayerNPC {
 
         EnumSet<WrapperPlayServerPlayerInfoUpdate.Action> actions = EnumSet.of(
             WrapperPlayServerPlayerInfoUpdate.Action.ADD_PLAYER,
+            WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_GAME_MODE,
             WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_LISTED,
+            WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_LATENCY,
             WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_DISPLAY_NAME
         );
 
@@ -305,49 +310,62 @@ public class FakePlayerNPC {
     }
 
     private void sendMetadataPacket(Player player) {
-        List<EntityData<?>> metadata = new ArrayList<>();
+        try {
+            List<EntityData<?>> baseMetadata = new ArrayList<>();
 
-        byte flags = 0;
-        if (pose == NPCPose.SNEAKING) flags |= 0x02;
-        if (invisible)                flags |= 0x20;
-        if (glowing)                  flags |= 0x40;
-        metadata.add(new EntityData<>(0, EntityDataTypes.BYTE, flags));
+            byte flags = 0;
+            if (pose == NPCPose.SNEAKING) flags |= 0x02;
+            if (invisible)                flags |= 0x20;
+            if (glowing)                  flags |= 0x40;
+            baseMetadata.add(new EntityData<>(0, EntityDataTypes.BYTE, flags));
 
-        EntityPose pePose = switch (pose) {
-            case SNEAKING    -> EntityPose.CROUCHING;
-            case SLEEPING    -> EntityPose.SLEEPING;
-            case SWIMMING    -> EntityPose.SWIMMING;
-            case SPIN_ATTACK -> EntityPose.SPIN_ATTACK;
-            case DYING       -> EntityPose.DYING;
-            case SITTING     -> EntityPose.SITTING;
-            default          -> EntityPose.STANDING;
-        };
-        metadata.add(new EntityData<>(6, EntityDataTypes.ENTITY_POSE, pePose));
+            EntityPose pePose = switch (pose) {
+                case SNEAKING    -> EntityPose.CROUCHING;
+                case SLEEPING    -> EntityPose.SLEEPING;
+                case SWIMMING    -> EntityPose.SWIMMING;
+                case SPIN_ATTACK -> EntityPose.SPIN_ATTACK;
+                case DYING       -> EntityPose.DYING;
+                case SITTING     -> EntityPose.SITTING;
+                default          -> EntityPose.STANDING;
+            };
+            baseMetadata.add(new EntityData<>(6, EntityDataTypes.ENTITY_POSE, pePose));
 
-        if (npcType == NPCType.PLAYER) {
-            metadata.add(new EntityData<>(17, EntityDataTypes.BYTE, (byte) 0x7F));
-        } else if (showNametag && name != null && !name.isEmpty()) {
-            Component customName = LegacyComponentSerializer.legacySection()
-                .deserialize(ChatColor.translateAlternateColorCodes('&', name));
-            metadata.add(new EntityData<>(2, EntityDataTypes.OPTIONAL_ADV_COMPONENT, Optional.of(customName)));
-            metadata.add(new EntityData<>(3, EntityDataTypes.BOOLEAN, true));
-        }
+            if (npcType != NPCType.PLAYER && showNametag && name != null && !name.isEmpty()) {
+                Component customName = LegacyComponentSerializer.legacySection()
+                    .deserialize(ChatColor.translateAlternateColorCodes('&', name));
+                baseMetadata.add(new EntityData<>(2, EntityDataTypes.OPTIONAL_ADV_COMPONENT, Optional.of(customName)));
+                baseMetadata.add(new EntityData<>(3, EntityDataTypes.BOOLEAN, true));
+            }
 
-        WrapperPlayServerEntityMetadata metaPacket =
-            new WrapperPlayServerEntityMetadata(entityId, metadata);
-        PacketEvents.getAPI().getPlayerManager().sendPacket(player, metaPacket);
+            WrapperPlayServerEntityMetadata metaPacket =
+                new WrapperPlayServerEntityMetadata(entityId, baseMetadata);
+            PacketEvents.getAPI().getPlayerManager().sendPacket(player, metaPacket);
+
+            if (npcType == NPCType.PLAYER) {
+                ServerVersion ver = PacketEvents.getAPI().getServerManager().getVersion();
+                if (ver.isOlderThanOrEquals(ServerVersion.V_1_21_1)) {
+                    List<EntityData<?>> skinLayers = Collections.singletonList(
+                        new EntityData<>(17, EntityDataTypes.BYTE, (byte) 0x7F)
+                    );
+                    PacketEvents.getAPI().getPlayerManager().sendPacket(
+                        player,
+                        new WrapperPlayServerEntityMetadata(entityId, skinLayers)
+                    );
+                }
+            }
+        } catch (Exception ignored) {}
     }
 
     private void sendEquipmentPackets(Player player) {
         if (equipment == null) return;
         try {
             List<Equipment> eqList = new ArrayList<>();
-            eqList.add(new Equipment(EquipmentSlot.MAIN_HAND, toPeItem(equipment.getMainHand())));
-            eqList.add(new Equipment(EquipmentSlot.OFF_HAND,  toPeItem(equipment.getOffHand())));
-            eqList.add(new Equipment(EquipmentSlot.HELMET,    toPeItem(equipment.getHelmet())));
+            eqList.add(new Equipment(EquipmentSlot.MAIN_HAND,   toPeItem(equipment.getMainHand())));
+            eqList.add(new Equipment(EquipmentSlot.OFF_HAND,    toPeItem(equipment.getOffHand())));
+            eqList.add(new Equipment(EquipmentSlot.HELMET,      toPeItem(equipment.getHelmet())));
             eqList.add(new Equipment(EquipmentSlot.CHEST_PLATE, toPeItem(equipment.getChestplate())));
-            eqList.add(new Equipment(EquipmentSlot.LEGGINGS,  toPeItem(equipment.getLeggings())));
-            eqList.add(new Equipment(EquipmentSlot.BOOTS,     toPeItem(equipment.getBoots())));
+            eqList.add(new Equipment(EquipmentSlot.LEGGINGS,    toPeItem(equipment.getLeggings())));
+            eqList.add(new Equipment(EquipmentSlot.BOOTS,       toPeItem(equipment.getBoots())));
 
             WrapperPlayServerEntityEquipment eqPacket =
                 new WrapperPlayServerEntityEquipment(entityId, eqList);

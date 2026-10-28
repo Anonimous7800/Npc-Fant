@@ -9,17 +9,22 @@ import java.util.logging.Level;
 
 public class SkinManager {
 
+    private static final Map<String, String> PRESET_FALLBACK_USERS = Map.of(
+        "steve",    "MHF_Steve",
+        "alex",     "MHF_Alex",
+        "guard",    "Knight",
+        "merchant", "MHF_Villager",
+        "warrior",  "Notch",
+        "mage",     "jeb_"
+    );
+
     private final Plugin               plugin;
     private final SkinCache            cache;
     private final UsernameSkinProvider usernameProvider;
 
-
-    private final Map<String, SkinData> presetSkins = new LinkedHashMap<>();
-
-    private final Map<String, SkinData> localSkins  = new LinkedHashMap<>();
-
+    private final Map<String, SkinData> presetSkins        = new LinkedHashMap<>();
+    private final Map<String, SkinData> localSkins         = new LinkedHashMap<>();
     private final Map<String, String>   presetDisplayNames = new LinkedHashMap<>();
-
     private final Map<String, String>   localDisplayNames  = new LinkedHashMap<>();
 
     public SkinManager(Plugin plugin) {
@@ -28,9 +33,6 @@ public class SkinManager {
         this.usernameProvider = new UsernameSkinProvider();
         reload();
     }
-
-
-
 
     public void reload() {
         presetSkins.clear();
@@ -74,7 +76,7 @@ public class SkinManager {
                 String signature = cfg.getString("signature", "");
                 String display   = cfg.getString("display-name",
                     cfg.getString("name",
-                    f.getName().replace(".yml","").replace(".yaml","")));
+                    f.getName().replace(".yml", "").replace(".yaml", "")));
 
                 if (value.isEmpty()) {
                     plugin.getLogger().warning("[NpcFant] Skin local '" + f.getName()
@@ -82,7 +84,7 @@ public class SkinManager {
                     continue;
                 }
 
-                String key = f.getName().replace(".yml","").replace(".yaml","").toLowerCase();
+                String key = f.getName().replace(".yml", "").replace(".yaml", "").toLowerCase();
                 localSkins.put(key, new SkinData(value, signature));
                 localDisplayNames.put(key, display);
             } catch (Exception e) {
@@ -92,21 +94,25 @@ public class SkinManager {
         }
     }
 
-
-
-
     public Optional<SkinData> getSkin(String type, String input) {
         String key = input.toLowerCase();
-
 
         Optional<SkinData> cached = cache.get(type + ":" + key);
         if (cached.isPresent()) return cached;
 
         Optional<SkinData> result;
         switch (type.toLowerCase()) {
-            case "preset":
-                result = Optional.ofNullable(presetSkins.get(key));
+            case "preset": {
+                SkinData preset = presetSkins.get(key);
+                if (preset != null && preset.getSignature() != null && !preset.getSignature().isEmpty()) {
+                    result = Optional.of(preset);
+                } else {
+                    String fallbackUser = PRESET_FALLBACK_USERS.getOrDefault(key, input);
+                    result = usernameProvider.fetchSkin(fallbackUser);
+                    result.ifPresent(sd -> presetSkins.put(key, sd));
+                }
                 break;
+            }
             case "file":
                 result = Optional.ofNullable(localSkins.get(key));
                 break;
@@ -114,9 +120,8 @@ public class SkinManager {
                 result = usernameProvider.fetchSkin(input);
                 break;
             default:
-
                 result = Optional.ofNullable(presetSkins.get(key));
-                if (!result.isPresent()) result = Optional.ofNullable(localSkins.get(key));
+                if (result.isEmpty()) result = Optional.ofNullable(localSkins.get(key));
                 break;
         }
 
@@ -124,22 +129,16 @@ public class SkinManager {
         return result;
     }
 
-
     public SkinData getDefaultSkin() {
         SkinData steve = presetSkins.get("steve");
-        return steve != null ? steve : new SkinData(
-            com.example.advancednpc.modules.npc.FakePlayerNPC.STEVE_VALUE,
-            com.example.advancednpc.modules.npc.FakePlayerNPC.STEVE_SIGNATURE
-        );
+        if (steve != null && steve.getSignature() != null && !steve.getSignature().isEmpty()) {
+            return steve;
+        }
+        return new SkinData("", "");
     }
 
-
-
-
     public Map<String, SkinData> getPresetSkins()  { return Collections.unmodifiableMap(presetSkins); }
-
     public Map<String, SkinData> getLocalSkins()   { return Collections.unmodifiableMap(localSkins); }
-
 
     public String getPresetDisplayName(String key) {
         return presetDisplayNames.getOrDefault(key.toLowerCase(), key);
@@ -149,14 +148,12 @@ public class SkinManager {
         return localDisplayNames.getOrDefault(key.toLowerCase(), key);
     }
 
-
     public Map<String, String> getAllDisplayNames() {
         Map<String, String> all = new LinkedHashMap<>();
         presetDisplayNames.forEach((k, v) -> all.put("preset:" + k, v));
-        localDisplayNames.forEach( (k, v) -> all.put("file:"   + k, v));
+        localDisplayNames.forEach((k, v) -> all.put("file:"   + k, v));
         return all;
     }
-
 
     public Map<String, SkinData> getAllSkins() {
         Map<String, SkinData> all = new LinkedHashMap<>();
