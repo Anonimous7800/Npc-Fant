@@ -1,11 +1,13 @@
 ![logo](logo/logo.png)
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Modrinth](https://img.shields.io/badge/Modrinth-npc--fant-00c853.svg)](https://modrinth.com/plugin/npc-fant)
+[![Modrinth](https://img.shields.io/badge/Modrinth-npcfant-00c853.svg)](https://modrinth.com/plugin/npcfant)
 [![Discord](https://img.shields.io/badge/Discord-Soporte-5865F2.svg?logo=discord&logoColor=white)](https://discord.gg/GS6hEw52BB)
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.17--26.3-brightgreen.svg)](https://www.minecraft.net)
 [![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://www.java.com)
 [![Maven](https://img.shields.io/badge/Build-Maven-red.svg)](https://maven.apache.org/)
+
+> ### 📥 **[¡Descárgalo aquí en Modrinth!](https://modrinth.com/plugin/npcfant)** — Versión 2.0.0 disponible ahora.
 
 NpcFant is a modernized and feature-rich packet-based NPC plugin for Minecraft servers, providing administrators and developers with powerful tools to create interactive virtual characters, custom skins, and floating holograms.
 
@@ -30,9 +32,12 @@ NpcFant supports Minecraft Java Edition versions **1.17 through 1.21.11** (and m
 
 Each version module is compiled separately ensuring optimal performance.
 
-## Setting Up
+## 📥 Descarga e Instalación (Setting Up)
 
-Take a look at the **[Installation Section of the Guide](GUIDE.md#installation)** for detailed setups.
+1. **[Descárgalo aquí en Modrinth](https://modrinth.com/plugin/npcfant)** y obtén la última versión `Npcfant-2.0.jar`.
+2. Coloca `Npcfant-2.0.jar` en la carpeta `plugins/` de tu servidor.
+3. Inicia o reinicia tu servidor.
+4. Consulta la **[Guía Completa del Plugin](GUIDE.md)** para detalles de configuración, comandos y permisos.
 
 ## Skin System & GUI
 

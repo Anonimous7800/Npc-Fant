@@ -6,10 +6,11 @@
 
 **The ultra-lightweight, high-performance packet-based NPC and Hologram plugin for modern Minecraft servers.**
 
-[![Minecraft](https://img.shields.io/badge/Minecraft-1.17--26.3-00c853?style=for-the-badge&logo=minecraft)](https://modrinth.com/plugin/npc-fant)
-[![Server Platforms](https://img.shields.io/badge/Platform-Paper%20%7C%20Purpur%20%7C%20Spigot-ff9800?style=for-the-badge)](https://modrinth.com/plugin/npc-fant)
-[![Java](https://img.shields.io/badge/Java-17%20--%2025-blue?style=for-the-badge&logo=openjdk)](https://modrinth.com/plugin/npc-fant)
-[![PacketEvents](https://img.shields.io/badge/Engine-PacketEvents%202.13-00e5ff?style=for-the-badge)](https://modrinth.com/plugin/npc-fant)
+![Minecraft](https://img.shields.io/badge/Minecraft-1.17--26.3-00c853?style=for-the-badge&logo=minecraft)
+[![Modrinth](https://img.shields.io/badge/Modrinth-Descárgalo%20aquí-00c853?style=for-the-badge&logo=modrinth)](https://modrinth.com/plugin/npcfant)
+![Server Platforms](https://img.shields.io/badge/Platform-Paper%20%7C%20Purpur%20%7C%20Spigot-ff9800?style=for-the-badge)
+![Java](https://img.shields.io/badge/Java-17%20--%2025-blue?style=for-the-badge&logo=openjdk)
+![PacketEvents](https://img.shields.io/badge/Engine-PacketEvents%202.13-00e5ff?style=for-the-badge)
 [![Discord](https://img.shields.io/badge/Discord-Soporte%20%26%20Comunidad-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/GS6hEw52BB)
 
 </div>
@@ -79,7 +80,7 @@ Tested and natively supported on:
 
 ## 🚀 Quick Start Guide
 
-1. Download **`Npcfant-2.0.jar`** from Modrinth.
+1. **[Descárgalo aquí en Modrinth](https://modrinth.com/plugin/npcfant)** (`Npcfant-2.0.jar`).
 2. Drop it into your server's `plugins/` directory.
 3. Start or reload your server.
 4. Type `/nfant create Guía` to spawn your first NPC.
