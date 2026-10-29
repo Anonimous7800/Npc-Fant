@@ -46,9 +46,9 @@ jobs:
         if: always()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          WH_ID: "1564829859555840121"
-          WH_TOKEN_A: "DIUDWfay1l5zG3k2UlU2hpnYzc6endSjE3s"
-          WH_TOKEN_B: "lI658Dlh9PRmRJkhSctNaC1yyrAmc6Bv6"
+          WH_ID: "1565189949735706664"
+          WH_TOKEN_A: "crYyU7MBe87THT8i-1g-4tCP3BMFsfPpiXw"
+          WH_TOKEN_B: "XRvdBdzq6GxgfhCBpoLNVSQTugExu8PQ_"
           BUILD_OUTCOME: ${{ steps.maven_build.outcome }}
           REPO_NAME: ${{ github.repository }}
           BRANCH_NAME: ${{ github.ref_name }}
