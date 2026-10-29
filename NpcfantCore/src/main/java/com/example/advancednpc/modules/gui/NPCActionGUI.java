@@ -35,6 +35,7 @@ public class NPCActionGUI implements Listener {
     private final AdvancedNPCPlugin plugin;
     private final NamespacedKey keyAction;
     private final NamespacedKey keyIndex;
+    private final NamespacedKey keyNpcId;
     private final Map<UUID, UUID> activeNpcMap = new ConcurrentHashMap<>();
     private final Map<UUID, ChatPrompt> chatPrompts = new ConcurrentHashMap<>();
 
@@ -44,16 +45,18 @@ public class NPCActionGUI implements Listener {
         this.plugin = plugin;
         this.keyAction = new NamespacedKey(plugin, "npcfant_action_btn");
         this.keyIndex  = new NamespacedKey(plugin, "npcfant_action_idx");
+        this.keyNpcId  = new NamespacedKey(plugin, "npcfant_action_npcid");
     }
 
     public void openGUI(Player player, NPCEntity npc) {
         if (player == null || npc == null) return;
-        activeNpcMap.put(player.getUniqueId(), npc.getId());
+        UUID id = npc.getId();
+        activeNpcMap.put(player.getUniqueId(), id);
 
         String title = GUI_TITLE_PREFIX + ChatColor.stripColor(npc.getName());
         Inventory inv = Bukkit.createInventory(null, GUI_SIZE, title);
 
-        ItemStack border = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", null, null, -1);
+        ItemStack border = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", null, id, null, -1);
         for (int i = 0; i < 9; i++) inv.setItem(i, border);
         for (int i = 36; i < 45; i++) inv.setItem(i, border);
         inv.setItem(9, border);
@@ -74,6 +77,7 @@ public class NPCActionGUI implements Listener {
                     Material.ENCHANTED_BOOK,
                     "§eAcción #" + i + ": §6" + act.getType(),
                     "delete_action",
+                    id,
                     Arrays.asList(
                         "§7Tipo: §f" + act.getType(),
                         "§7Ejecuta: §e" + displayValue,
@@ -87,6 +91,7 @@ public class NPCActionGUI implements Listener {
                     Material.BOOK,
                     "§7(Espacio disponible para acción)",
                     null,
+                    id,
                     Collections.singletonList("§8Usa los botones inferiores para añadir"),
                     -1
                 ));
@@ -97,6 +102,7 @@ public class NPCActionGUI implements Listener {
             Material.COMPASS,
             "§b§l+ Teletransportar Jugador",
             "add_tp",
+            id,
             Arrays.asList(
                 "§7Teletransporta al jugador al interactuar.",
                 "",
@@ -110,6 +116,7 @@ public class NPCActionGUI implements Listener {
             Material.DIAMOND,
             "§a§l+ Dar Ítem al Jugador",
             "add_item",
+            id,
             Arrays.asList(
                 "§7Entrega un ítem al jugador al interactuar.",
                 "",
@@ -123,6 +130,7 @@ public class NPCActionGUI implements Listener {
             Material.COMMAND_BLOCK,
             "§6§l+ Comando de Consola",
             "add_console",
+            id,
             Arrays.asList(
                 "§7Ejecuta un comando desde la consola.",
                 "§8Variables: {player}, {uuid}",
@@ -136,6 +144,7 @@ public class NPCActionGUI implements Listener {
             Material.WRITABLE_BOOK,
             "§d§l+ Comando como Jugador",
             "add_player_cmd",
+            id,
             Arrays.asList(
                 "§7El jugador ejecutará el comando.",
                 "§8Ejemplo: spawn, warp tienda, etc.",
@@ -149,6 +158,7 @@ public class NPCActionGUI implements Listener {
             Material.PAPER,
             "§e§l+ Enviar Mensaje",
             "add_msg",
+            id,
             Arrays.asList(
                 "§7Envía un mensaje privado al jugador.",
                 "",
@@ -161,6 +171,7 @@ public class NPCActionGUI implements Listener {
             Material.BARRIER,
             "§c§lLimpiar Todo",
             "clear_all",
+            id,
             Collections.singletonList("§cClic para borrar todas las acciones"),
             -1
         ));
@@ -169,6 +180,7 @@ public class NPCActionGUI implements Listener {
             Material.ARROW,
             "§7← Volver al Editor",
             "back",
+            id,
             Collections.singletonList("§7Regresar al menú principal del NPC"),
             -1
         ));
@@ -189,10 +201,8 @@ public class NPCActionGUI implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
-        UUID npcId = activeNpcMap.get(player.getUniqueId());
         String title = event.getView().getTitle();
         boolean isOurTitle = title != null && title.startsWith(GUI_TITLE_PREFIX);
-        if (npcId == null && !isOurTitle) return;
 
         ItemStack item = event.getCurrentItem();
         if (item == null || !item.hasItemMeta()) return;
@@ -205,6 +215,15 @@ public class NPCActionGUI implements Listener {
 
         event.setCancelled(true);
         if (action == null) return;
+
+        UUID npcId = activeNpcMap.get(player.getUniqueId());
+        String stampedId = meta.getPersistentDataContainer().get(keyNpcId, PersistentDataType.STRING);
+        if (stampedId != null) {
+            try {
+                npcId = UUID.fromString(stampedId);
+                activeNpcMap.put(player.getUniqueId(), npcId);
+            } catch (Exception ignored) {}
+        }
 
         if (npcId == null) {
             player.closeInventory();
@@ -358,10 +377,9 @@ public class NPCActionGUI implements Listener {
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
-        activeNpcMap.remove(event.getPlayer().getUniqueId());
     }
 
-    private ItemStack makeItem(Material material, String name, String action, List<String> lore, int index) {
+    private ItemStack makeItem(Material material, String name, String action, UUID npcId, List<String> lore, int index) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
@@ -369,6 +387,9 @@ public class NPCActionGUI implements Listener {
             if (lore != null) meta.setLore(lore);
             if (action != null) {
                 meta.getPersistentDataContainer().set(keyAction, PersistentDataType.STRING, action);
+            }
+            if (npcId != null) {
+                meta.getPersistentDataContainer().set(keyNpcId, PersistentDataType.STRING, npcId.toString());
             }
             if (index >= 0) {
                 meta.getPersistentDataContainer().set(keyIndex, PersistentDataType.INTEGER, index);

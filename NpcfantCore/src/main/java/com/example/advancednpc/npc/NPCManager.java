@@ -231,6 +231,7 @@ public class NPCManager implements INPCManager, Listener {
             Hologram h = hologramManager.createHologram(holLoc, combinedLines.toArray(new String[0]));
             entity.setHologramId(h.getId());
         }
+        saveNpcHologramsSummary();
     }
 
     @Override
@@ -277,6 +278,7 @@ public class NPCManager implements INPCManager, Listener {
         entity.remove();
 
         if (storage != null) storage.delete(id);
+        saveNpcHologramsSummary();
     }
 
     @Override
@@ -517,4 +519,27 @@ public class NPCManager implements INPCManager, Listener {
     public boolean  isNPC(UUID id)    { return npcs.containsKey(id); }
     public SkinManager getSkinManager() { return skinManager; }
     public Map<UUID, NPCEntity> getNpcsMap() { return Collections.unmodifiableMap(npcs); }
+
+    public void saveNpcHologramsSummary() {
+        try {
+            java.io.File holoFolder = new java.io.File(plugin.getDataFolder(), "holograms");
+            if (!holoFolder.exists()) holoFolder.mkdirs();
+            java.io.File summaryFile = new java.io.File(holoFolder, "npc_holograms.yml");
+            org.bukkit.configuration.file.YamlConfiguration cfg = new org.bukkit.configuration.file.YamlConfiguration();
+            for (NPCEntity npc : npcs.values()) {
+                String id = npc.getId().toString();
+                cfg.set("npcs." + id + ".name", npc.getName());
+                Location loc = npc.getLocation();
+                if (loc != null && loc.getWorld() != null) {
+                    cfg.set("npcs." + id + ".world", loc.getWorld().getName());
+                    cfg.set("npcs." + id + ".x", loc.getX());
+                    cfg.set("npcs." + id + ".y", loc.getY());
+                    cfg.set("npcs." + id + ".z", loc.getZ());
+                }
+                cfg.set("npcs." + id + ".show_nametag", npc.isShowNametag());
+                cfg.set("npcs." + id + ".hologram_lines", npc.getHologramLines());
+            }
+            cfg.save(summaryFile);
+        } catch (Exception ignored) {}
+    }
 }

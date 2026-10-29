@@ -27,21 +27,24 @@ public class NPCGlowGUI implements Listener {
 
     private final AdvancedNPCPlugin plugin;
     private final NamespacedKey keyColor;
+    private final NamespacedKey keyNpcId;
     private final Map<UUID, UUID> activeNpcMap = new ConcurrentHashMap<>();
 
     public NPCGlowGUI(AdvancedNPCPlugin plugin) {
         this.plugin = plugin;
         this.keyColor = new NamespacedKey(plugin, "npcfant_glow_color");
+        this.keyNpcId = new NamespacedKey(plugin, "npcfant_glow_npcid");
     }
 
     public void openGUI(Player player, NPCEntity npc) {
         if (player == null || npc == null) return;
-        activeNpcMap.put(player.getUniqueId(), npc.getId());
+        UUID id = npc.getId();
+        activeNpcMap.put(player.getUniqueId(), id);
 
         String title = GUI_TITLE_PREFIX + ChatColor.stripColor(npc.getName());
         Inventory inv = Bukkit.createInventory(null, GUI_SIZE, title);
 
-        ItemStack border = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", null, null);
+        ItemStack border = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", null, id, null);
         for (int i = 0; i < 9; i++) inv.setItem(i, border);
         for (int i = 27; i < 36; i++) inv.setItem(i, border);
         inv.setItem(9, border);
@@ -55,6 +58,7 @@ public class NPCGlowGUI implements Listener {
             Material.RED_CONCRETE,
             "§c§lRojo (RED)",
             "RED",
+            id,
             Arrays.asList("§7Aura luminosa de color rojo.", "", "RED".equalsIgnoreCase(current) ? "§a✔ Color actual" : "§eClic para seleccionar")
         ));
 
@@ -62,6 +66,7 @@ public class NPCGlowGUI implements Listener {
             Material.ORANGE_CONCRETE,
             "§6§lDorado (GOLD)",
             "GOLD",
+            id,
             Arrays.asList("§7Aura luminosa de color dorado/naranja.", "", "GOLD".equalsIgnoreCase(current) ? "§a✔ Color actual" : "§eClic para seleccionar")
         ));
 
@@ -69,6 +74,7 @@ public class NPCGlowGUI implements Listener {
             Material.YELLOW_CONCRETE,
             "§e§lAmarillo (YELLOW)",
             "YELLOW",
+            id,
             Arrays.asList("§7Aura luminosa de color amarillo.", "", "YELLOW".equalsIgnoreCase(current) ? "§a✔ Color actual" : "§eClic para seleccionar")
         ));
 
@@ -76,6 +82,7 @@ public class NPCGlowGUI implements Listener {
             Material.LIME_CONCRETE,
             "§a§lVerde (GREEN)",
             "GREEN",
+            id,
             Arrays.asList("§7Aura luminosa de color verde brillante.", "", "GREEN".equalsIgnoreCase(current) ? "§a✔ Color actual" : "§eClic para seleccionar")
         ));
 
@@ -83,6 +90,7 @@ public class NPCGlowGUI implements Listener {
             Material.LIGHT_BLUE_CONCRETE,
             "§b§lAqua (AQUA)",
             "AQUA",
+            id,
             Arrays.asList("§7Aura luminosa de color celeste / cyan.", "", "AQUA".equalsIgnoreCase(current) ? "§a✔ Color actual" : "§eClic para seleccionar")
         ));
 
@@ -90,6 +98,7 @@ public class NPCGlowGUI implements Listener {
             Material.BLUE_CONCRETE,
             "§9§lAzul (BLUE)",
             "BLUE",
+            id,
             Arrays.asList("§7Aura luminosa de color azul oscuro.", "", "BLUE".equalsIgnoreCase(current) ? "§a✔ Color actual" : "§eClic para seleccionar")
         ));
 
@@ -97,6 +106,7 @@ public class NPCGlowGUI implements Listener {
             Material.MAGENTA_CONCRETE,
             "§d§lMorado / Rosa (LIGHT_PURPLE)",
             "LIGHT_PURPLE",
+            id,
             Arrays.asList("§7Aura luminosa de color magenta.", "", "LIGHT_PURPLE".equalsIgnoreCase(current) ? "§a✔ Color actual" : "§eClic para seleccionar")
         ));
 
@@ -104,6 +114,7 @@ public class NPCGlowGUI implements Listener {
             Material.WHITE_CONCRETE,
             "§f§lBlanco (WHITE)",
             "WHITE",
+            id,
             Arrays.asList("§7Aura luminosa blanca clásica.", "", "WHITE".equalsIgnoreCase(current) ? "§a✔ Color actual" : "§eClic para seleccionar")
         ));
 
@@ -111,6 +122,7 @@ public class NPCGlowGUI implements Listener {
             Material.BARRIER,
             "§c§lDesactivar Glow",
             "OFF",
+            id,
             Arrays.asList("§7Quita el efecto de aura luminosa.", "", (current == null || current.isEmpty() || current.equalsIgnoreCase("OFF")) ? "§a✔ Desactivado" : "§cClic para desactivar")
         ));
 
@@ -118,6 +130,7 @@ public class NPCGlowGUI implements Listener {
             Material.ARROW,
             "§7← Volver al Editor",
             "back",
+            id,
             Collections.singletonList("§7Regresar al menú principal de configuración")
         ));
 
@@ -127,10 +140,8 @@ public class NPCGlowGUI implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
-        UUID npcId = activeNpcMap.get(player.getUniqueId());
         String title = event.getView().getTitle();
         boolean isOurTitle = title != null && title.startsWith(GUI_TITLE_PREFIX);
-        if (npcId == null && !isOurTitle) return;
 
         ItemStack item = event.getCurrentItem();
         if (item == null || !item.hasItemMeta()) return;
@@ -143,6 +154,15 @@ public class NPCGlowGUI implements Listener {
 
         event.setCancelled(true);
         if (color == null) return;
+
+        UUID npcId = activeNpcMap.get(player.getUniqueId());
+        String stampedId = meta.getPersistentDataContainer().get(keyNpcId, PersistentDataType.STRING);
+        if (stampedId != null) {
+            try {
+                npcId = UUID.fromString(stampedId);
+                activeNpcMap.put(player.getUniqueId(), npcId);
+            } catch (Exception ignored) {}
+        }
 
         if (npcId == null) {
             player.closeInventory();
@@ -177,10 +197,9 @@ public class NPCGlowGUI implements Listener {
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
-        activeNpcMap.remove(event.getPlayer().getUniqueId());
     }
 
-    private ItemStack makeItem(Material material, String name, String color, List<String> lore) {
+    private ItemStack makeItem(Material material, String name, String color, UUID npcId, List<String> lore) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
@@ -188,6 +207,9 @@ public class NPCGlowGUI implements Listener {
             if (lore != null) meta.setLore(lore);
             if (color != null) {
                 meta.getPersistentDataContainer().set(keyColor, PersistentDataType.STRING, color);
+            }
+            if (npcId != null) {
+                meta.getPersistentDataContainer().set(keyNpcId, PersistentDataType.STRING, npcId.toString());
             }
             item.setItemMeta(meta);
         }

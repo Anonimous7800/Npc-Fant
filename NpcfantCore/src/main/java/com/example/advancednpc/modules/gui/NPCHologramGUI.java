@@ -35,6 +35,7 @@ public class NPCHologramGUI implements Listener {
     private final NamespacedKey keyAction;
     private final NamespacedKey keyIndex;
     private final NamespacedKey keyColorCode;
+    private final NamespacedKey keyNpcId;
 
     private final Map<UUID, UUID> activeNpcMap = new ConcurrentHashMap<>();
     private final Map<UUID, Integer> activeLineIdxMap = new ConcurrentHashMap<>();
@@ -48,17 +49,19 @@ public class NPCHologramGUI implements Listener {
         this.keyAction = new NamespacedKey(plugin, "npcfant_holo_action");
         this.keyIndex = new NamespacedKey(plugin, "npcfant_holo_idx");
         this.keyColorCode = new NamespacedKey(plugin, "npcfant_holo_color");
+        this.keyNpcId = new NamespacedKey(plugin, "npcfant_holo_npcid");
     }
 
     public void openGUI(Player player, NPCEntity npc) {
         if (player == null || npc == null) return;
-        activeNpcMap.put(player.getUniqueId(), npc.getId());
+        UUID id = npc.getId();
+        activeNpcMap.put(player.getUniqueId(), id);
 
         String title = GUI_TITLE_PREFIX + ChatColor.stripColor(npc.getName());
         if (title.length() > 32) title = title.substring(0, 32);
         Inventory inv = Bukkit.createInventory(null, GUI_SIZE, title);
 
-        ItemStack border = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", null, -1, null);
+        ItemStack border = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", null, id, -1, null);
         for (int i = 0; i < 9; i++) inv.setItem(i, border);
         for (int i = 45; i < 54; i++) inv.setItem(i, border);
         inv.setItem(9, border);
@@ -83,6 +86,7 @@ public class NPCHologramGUI implements Listener {
                 Material.NAME_TAG,
                 colored,
                 "line_entry",
+                id,
                 i,
                 Arrays.asList(
                     "§7Línea #" + (i + 1),
@@ -101,6 +105,7 @@ public class NPCHologramGUI implements Listener {
                 Material.PAPER,
                 "§7§o(Sin líneas adicionales)",
                 null,
+                id,
                 -1,
                 Arrays.asList(
                     "§7Este NPC actualmente solo muestra",
@@ -116,6 +121,7 @@ public class NPCHologramGUI implements Listener {
             Material.ANVIL,
             "§a§l＋ Añadir Nueva Línea",
             "add_line",
+            id,
             -1,
             Arrays.asList(
                 "§7Añade un nuevo texto flotante",
@@ -131,6 +137,7 @@ public class NPCHologramGUI implements Listener {
             showNametag ? Material.ENDER_EYE : Material.ENDER_PEARL,
             "§e§lNametag Principal",
             "toggle_nametag",
+            id,
             -1,
             Arrays.asList(
                 "§7Nombre base del NPC: " + (showNametag ? "§aVisible" : "§cOculto"),
@@ -144,6 +151,7 @@ public class NPCHologramGUI implements Listener {
                 Material.LAVA_BUCKET,
                 "§c§lLimpiar Líneas",
                 "clear_lines",
+                id,
                 -1,
                 Arrays.asList(
                     "§4Borra todas las líneas flotantes del NPC.",
@@ -157,6 +165,7 @@ public class NPCHologramGUI implements Listener {
             Material.ARROW,
             "§c← Volver al Editor",
             "back",
+            id,
             -1,
             Collections.singletonList("§7Regresar al menú principal de configuración")
         ));
@@ -166,14 +175,15 @@ public class NPCHologramGUI implements Listener {
 
     public void openColorPicker(Player player, NPCEntity npc, int lineIndex) {
         if (player == null || npc == null) return;
-        activeNpcMap.put(player.getUniqueId(), npc.getId());
+        UUID id = npc.getId();
+        activeNpcMap.put(player.getUniqueId(), id);
         activeLineIdxMap.put(player.getUniqueId(), lineIndex);
 
         String title = COLOR_GUI_PREFIX + "#" + (lineIndex + 1);
         if (title.length() > 32) title = title.substring(0, 32);
         Inventory inv = Bukkit.createInventory(null, COLOR_GUI_SIZE, title);
 
-        ItemStack border = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", null, -1, null);
+        ItemStack border = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", null, id, -1, null);
         for (int i = 0; i < 9; i++) inv.setItem(i, border);
         for (int i = 27; i < 36; i++) inv.setItem(i, border);
         inv.setItem(9, border);
@@ -181,26 +191,27 @@ public class NPCHologramGUI implements Listener {
         inv.setItem(18, border);
         inv.setItem(26, border);
 
-        inv.setItem(10, makeColorItem(Material.RED_CONCRETE, "§c§lRojo Claro", "&c"));
-        inv.setItem(11, makeColorItem(Material.RED_TERRACOTTA, "§4§lRojo Oscuro", "&4"));
-        inv.setItem(12, makeColorItem(Material.ORANGE_CONCRETE, "§6§lDorado", "&6"));
-        inv.setItem(13, makeColorItem(Material.YELLOW_CONCRETE, "§e§lAmarillo", "&e"));
-        inv.setItem(14, makeColorItem(Material.LIME_CONCRETE, "§a§lVerde Lima", "&a"));
-        inv.setItem(15, makeColorItem(Material.GREEN_CONCRETE, "§2§lVerde Oscuro", "&2"));
-        inv.setItem(16, makeColorItem(Material.LIGHT_BLUE_CONCRETE, "§b§lAqua", "&b"));
+        inv.setItem(10, makeColorItem(Material.RED_CONCRETE, "§c§lRojo Claro", "&c", id));
+        inv.setItem(11, makeColorItem(Material.RED_TERRACOTTA, "§4§lRojo Oscuro", "&4", id));
+        inv.setItem(12, makeColorItem(Material.ORANGE_CONCRETE, "§6§lDorado", "&6", id));
+        inv.setItem(13, makeColorItem(Material.YELLOW_CONCRETE, "§e§lAmarillo", "&e", id));
+        inv.setItem(14, makeColorItem(Material.LIME_CONCRETE, "§a§lVerde Lima", "&a", id));
+        inv.setItem(15, makeColorItem(Material.GREEN_CONCRETE, "§2§lVerde Oscuro", "&2", id));
+        inv.setItem(16, makeColorItem(Material.LIGHT_BLUE_CONCRETE, "§b§lAqua", "&b", id));
 
-        inv.setItem(19, makeColorItem(Material.CYAN_CONCRETE, "§3§lCyan", "&3"));
-        inv.setItem(20, makeColorItem(Material.BLUE_CONCRETE, "§9§lAzul Claro", "&9"));
-        inv.setItem(21, makeColorItem(Material.BLUE_TERRACOTTA, "§1§lAzul Oscuro", "&1"));
-        inv.setItem(22, makeColorItem(Material.PINK_CONCRETE, "§d§lRosa / Magenta", "&d"));
-        inv.setItem(23, makeColorItem(Material.PURPLE_CONCRETE, "§5§lMorado", "&5"));
-        inv.setItem(24, makeColorItem(Material.WHITE_CONCRETE, "§f§lBlanco", "&f"));
-        inv.setItem(25, makeColorItem(Material.LIGHT_GRAY_CONCRETE, "§7§lGris Claro", "&7"));
+        inv.setItem(19, makeColorItem(Material.CYAN_CONCRETE, "§3§lCyan", "&3", id));
+        inv.setItem(20, makeColorItem(Material.BLUE_CONCRETE, "§9§lAzul Claro", "&9", id));
+        inv.setItem(21, makeColorItem(Material.BLUE_TERRACOTTA, "§1§lAzul Oscuro", "&1", id));
+        inv.setItem(22, makeColorItem(Material.PINK_CONCRETE, "§d§lRosa / Magenta", "&d", id));
+        inv.setItem(23, makeColorItem(Material.PURPLE_CONCRETE, "§5§lMorado", "&5", id));
+        inv.setItem(24, makeColorItem(Material.WHITE_CONCRETE, "§f§lBlanco", "&f", id));
+        inv.setItem(25, makeColorItem(Material.LIGHT_GRAY_CONCRETE, "§7§lGris Claro", "&7", id));
 
         inv.setItem(31, makeItem(
             Material.ARROW,
             "§7← Volver a Hologramas",
             "back_to_holo",
+            id,
             -1,
             Collections.singletonList("§7Regresar a la lista de líneas")
         ));
@@ -208,7 +219,7 @@ public class NPCHologramGUI implements Listener {
         player.openInventory(inv);
     }
 
-    private ItemStack makeColorItem(Material mat, String name, String code) {
+    private ItemStack makeColorItem(Material mat, String name, String code, UUID npcId) {
         ItemStack item = new ItemStack(mat);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
@@ -219,12 +230,15 @@ public class NPCHologramGUI implements Listener {
                 "§eClic para seleccionar"
             ));
             meta.getPersistentDataContainer().set(keyColorCode, PersistentDataType.STRING, code);
+            if (npcId != null) {
+                meta.getPersistentDataContainer().set(keyNpcId, PersistentDataType.STRING, npcId.toString());
+            }
             item.setItemMeta(meta);
         }
         return item;
     }
 
-    private ItemStack makeItem(Material mat, String name, String action, int index, List<String> lore) {
+    private ItemStack makeItem(Material mat, String name, String action, UUID npcId, int index, List<String> lore) {
         ItemStack item = new ItemStack(mat);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
@@ -232,6 +246,9 @@ public class NPCHologramGUI implements Listener {
             if (lore != null) meta.setLore(lore);
             if (action != null) {
                 meta.getPersistentDataContainer().set(keyAction, PersistentDataType.STRING, action);
+            }
+            if (npcId != null) {
+                meta.getPersistentDataContainer().set(keyNpcId, PersistentDataType.STRING, npcId.toString());
             }
             if (index >= 0) {
                 meta.getPersistentDataContainer().set(keyIndex, PersistentDataType.INTEGER, index);
@@ -257,6 +274,14 @@ public class NPCHologramGUI implements Listener {
         if (meta == null) return;
 
         UUID npcId = activeNpcMap.get(player.getUniqueId());
+        String stampedId = meta.getPersistentDataContainer().get(keyNpcId, PersistentDataType.STRING);
+        if (stampedId != null) {
+            try {
+                npcId = UUID.fromString(stampedId);
+                activeNpcMap.put(player.getUniqueId(), npcId);
+            } catch (Exception ignored) {}
+        }
+
         if (npcId == null) {
             player.closeInventory();
             return;
@@ -266,6 +291,9 @@ public class NPCHologramGUI implements Listener {
         NPCEntity npc = (NPCEntity) nm.getNPC(npcId);
         if (npc == null) {
             player.sendMessage("§c[NpcFant] El NPC ya no existe.");
+            player.closeInventory();
+            return;
+        }
             player.closeInventory();
             return;
         }
@@ -407,7 +435,6 @@ public class NPCHologramGUI implements Listener {
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
                     String currentTitle = player.getOpenInventory().getTitle();
                     if (currentTitle == null || (!currentTitle.startsWith(GUI_TITLE_PREFIX) && !currentTitle.startsWith(COLOR_GUI_PREFIX))) {
-                        activeNpcMap.remove(player.getUniqueId());
                         activeLineIdxMap.remove(player.getUniqueId());
                     }
                 }, 20L);

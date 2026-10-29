@@ -28,21 +28,24 @@ public class NPCPoseGUI implements Listener {
 
     private final AdvancedNPCPlugin plugin;
     private final NamespacedKey keyPose;
+    private final NamespacedKey keyNpcId;
     private final Map<UUID, UUID> activeNpcMap = new ConcurrentHashMap<>();
 
     public NPCPoseGUI(AdvancedNPCPlugin plugin) {
         this.plugin = plugin;
         this.keyPose = new NamespacedKey(plugin, "npcfant_pose_type");
+        this.keyNpcId = new NamespacedKey(plugin, "npcfant_pose_npcid");
     }
 
     public void openGUI(Player player, NPCEntity npc) {
         if (player == null || npc == null) return;
-        activeNpcMap.put(player.getUniqueId(), npc.getId());
+        UUID id = npc.getId();
+        activeNpcMap.put(player.getUniqueId(), id);
 
         String title = GUI_TITLE_PREFIX + ChatColor.stripColor(npc.getName());
         Inventory inv = Bukkit.createInventory(null, GUI_SIZE, title);
 
-        ItemStack border = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", null, null);
+        ItemStack border = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", null, id, null);
         for (int i = 0; i < 9; i++) inv.setItem(i, border);
         for (int i = 27; i < 36; i++) inv.setItem(i, border);
         inv.setItem(9, border);
@@ -56,6 +59,7 @@ public class NPCPoseGUI implements Listener {
             Material.PLAYER_HEAD,
             "§a§lDe Pie (STANDING)",
             "STANDING",
+            id,
             Arrays.asList(
                 "§7Postura erguida estándar.",
                 "",
@@ -67,6 +71,7 @@ public class NPCPoseGUI implements Listener {
             Material.LEATHER_BOOTS,
             "§e§lAgachado (SNEAKING)",
             "SNEAKING",
+            id,
             Arrays.asList(
                 "§7Postura agachada (Shift / Crouch).",
                 "",
@@ -78,6 +83,7 @@ public class NPCPoseGUI implements Listener {
             Material.OAK_STAIRS,
             "§6§lSentado (SITTING)",
             "SITTING",
+            id,
             Arrays.asList(
                 "§7Postura de descanso sentado.",
                 "",
@@ -89,6 +95,7 @@ public class NPCPoseGUI implements Listener {
             Material.RED_BED,
             "§b§lDurmiendo (SLEEPING)",
             "SLEEPING",
+            id,
             Arrays.asList(
                 "§7Postura horizontal acostado.",
                 "",
@@ -100,6 +107,7 @@ public class NPCPoseGUI implements Listener {
             Material.WATER_BUCKET,
             "§9§lNadando (SWIMMING)",
             "SWIMMING",
+            id,
             Arrays.asList(
                 "§7Postura de nado / arrastre.",
                 "",
@@ -111,6 +119,7 @@ public class NPCPoseGUI implements Listener {
             Material.TRIDENT,
             "§d§lGiro con Tridente (SPIN_ATTACK)",
             "SPIN_ATTACK",
+            id,
             Arrays.asList(
                 "§7Ataque giratorio Riptide con tridente.",
                 "",
@@ -122,6 +131,7 @@ public class NPCPoseGUI implements Listener {
             Material.TOTEM_OF_UNDYING,
             "§c§lDerribado (DYING)",
             "DYING",
+            id,
             Arrays.asList(
                 "§7Postura de jugador caído en el suelo.",
                 "",
@@ -133,6 +143,7 @@ public class NPCPoseGUI implements Listener {
             Material.ARROW,
             "§7← Volver al Editor",
             "back",
+            id,
             Collections.singletonList("§7Regresar al menú principal de configuración")
         ));
 
@@ -142,10 +153,6 @@ public class NPCPoseGUI implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
-        UUID npcId = activeNpcMap.get(player.getUniqueId());
-        String title = event.getView().getTitle();
-        boolean isOurTitle = title != null && title.startsWith(GUI_TITLE_PREFIX);
-        if (npcId == null && !isOurTitle) return;
 
         ItemStack item = event.getCurrentItem();
         if (item == null || !item.hasItemMeta()) return;
@@ -154,6 +161,20 @@ public class NPCPoseGUI implements Listener {
         if (meta == null) return;
 
         String poseStr = meta.getPersistentDataContainer().get(keyPose, PersistentDataType.STRING);
+        String idStr = meta.getPersistentDataContainer().get(keyNpcId, PersistentDataType.STRING);
+        UUID npcId = null;
+        if (idStr != null) {
+            try {
+                npcId = UUID.fromString(idStr);
+                activeNpcMap.put(player.getUniqueId(), npcId);
+            } catch (IllegalArgumentException ignored) {}
+        }
+        if (npcId == null) {
+            npcId = activeNpcMap.get(player.getUniqueId());
+        }
+
+        String title = event.getView().getTitle();
+        boolean isOurTitle = title != null && title.startsWith(GUI_TITLE_PREFIX);
         if (poseStr == null && !isOurTitle) return;
 
         event.setCancelled(true);
@@ -190,10 +211,9 @@ public class NPCPoseGUI implements Listener {
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
-        activeNpcMap.remove(event.getPlayer().getUniqueId());
     }
 
-    private ItemStack makeItem(Material material, String name, String pose, List<String> lore) {
+    private ItemStack makeItem(Material material, String name, String pose, UUID npcId, List<String> lore) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
@@ -201,6 +221,9 @@ public class NPCPoseGUI implements Listener {
             if (lore != null) meta.setLore(lore);
             if (pose != null) {
                 meta.getPersistentDataContainer().set(keyPose, PersistentDataType.STRING, pose);
+            }
+            if (npcId != null) {
+                meta.getPersistentDataContainer().set(keyNpcId, PersistentDataType.STRING, npcId.toString());
             }
             item.setItemMeta(meta);
         }

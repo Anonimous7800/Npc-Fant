@@ -26,6 +26,7 @@ public final class ProtocolPacketIdSync {
         mapClient("bundle", PacketType.Play.Server.BUNDLE);
         mapClient("add_entity", PacketType.Play.Server.SPAWN_ENTITY);
         mapClient("animate", PacketType.Play.Server.ENTITY_ANIMATION);
+        mapClient("swing_animation", PacketType.Play.Server.ENTITY_ANIMATION);
         mapClient("award_stats", PacketType.Play.Server.STATISTICS);
         mapClient("block_changed_ack", PacketType.Play.Server.ACKNOWLEDGE_BLOCK_CHANGES);
         mapClient("block_destruction", PacketType.Play.Server.BLOCK_BREAK_ANIMATION);
@@ -65,6 +66,7 @@ public final class ProtocolPacketIdSync {
         mapClient("game_rule_values", PacketType.Play.Server.GAME_RULE_VALUES);
         mapClient("game_test_highlight_pos", PacketType.Play.Server.GAME_TEST_HIGHLIGHT_POS);
         mapClient("horse_screen_open", PacketType.Play.Server.OPEN_HORSE_WINDOW);
+        mapClient("mount_screen_open", PacketType.Play.Server.OPEN_HORSE_WINDOW);
         mapClient("hurt_animation", PacketType.Play.Server.HURT_ANIMATION);
         mapClient("initialize_border", PacketType.Play.Server.INITIALIZE_WORLD_BORDER);
         mapClient("keep_alive", PacketType.Play.Server.KEEP_ALIVE);
@@ -168,6 +170,7 @@ public final class ProtocolPacketIdSync {
 
         mapServer("accept_teleportation", PacketType.Play.Client.TELEPORT_CONFIRM);
         mapServer("attack", PacketType.Play.Client.ATTACK);
+        mapServer("punch", PacketType.Play.Client.ANIMATION);
         mapServer("block_entity_tag_query", PacketType.Play.Client.QUERY_BLOCK_NBT);
         mapServer("bundle_item_selected", PacketType.Play.Client.SELECT_BUNDLE_ITEM);
         mapServer("change_difficulty", PacketType.Play.Client.SET_DIFFICULTY);
@@ -438,6 +441,7 @@ public final class ProtocolPacketIdSync {
             }
 
             if (flow != null && path != null) {
+                path = path.replace('/', '_');
                 if (flow.contains("clientbound")) {
                     clientboundIds.put(path, id);
                 } else if (flow.contains("serverbound")) {

@@ -32,22 +32,25 @@ public class NPCEditorGUI implements Listener {
 
     private final AdvancedNPCPlugin plugin;
     private final NamespacedKey keyAction;
-    private final Map<UUID, UUID> editingNpcMap = new HashMap<>();
+    private final NamespacedKey keyNpcId;
+    private final Map<UUID, UUID> editingNpcMap = new ConcurrentHashMap<>();
     private final Map<UUID, UUID> pendingNameChat = new ConcurrentHashMap<>();
 
     public NPCEditorGUI(AdvancedNPCPlugin plugin) {
         this.plugin = plugin;
         this.keyAction = new NamespacedKey(plugin, "npcfant_editor_action");
+        this.keyNpcId = new NamespacedKey(plugin, "npcfant_editor_npcid");
     }
 
     public void openEditor(Player player, NPCEntity npc) {
         if (player == null || npc == null) return;
-        editingNpcMap.put(player.getUniqueId(), npc.getId());
+        UUID id = npc.getId();
+        editingNpcMap.put(player.getUniqueId(), id);
 
         String title = GUI_TITLE_PREFIX + ChatColor.stripColor(npc.getName());
         Inventory inv = Bukkit.createInventory(null, GUI_SIZE, title);
 
-        ItemStack border = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", null, null);
+        ItemStack border = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", null, id, null);
         for (int i = 0; i < 9; i++) inv.setItem(i, border);
         for (int i = 36; i < 45; i++) inv.setItem(i, border);
         inv.setItem(9, border);
@@ -61,6 +64,7 @@ public class NPCEditorGUI implements Listener {
             Material.PLAYER_HEAD,
             "§b§lCambiar de NPC §7(Seleccionar otro)",
             "select_npc",
+            id,
             Arrays.asList(
                 "§7Editando actualmente: §f" + npc.getName(),
                 "§7Total de NPCs creados: §e" + plugin.getNpcManager().getAllNPCs().size(),
@@ -74,6 +78,7 @@ public class NPCEditorGUI implements Listener {
             Material.ARMOR_STAND,
             "§e§lPose del NPC",
             "pose",
+            id,
             Arrays.asList(
                 "§7Pose actual: §a" + currentPose.name(),
                 "",
@@ -86,6 +91,7 @@ public class NPCEditorGUI implements Listener {
             Material.NAME_TAG,
             "§b§lCambiar Nombre y Color",
             "name",
+            id,
             Arrays.asList(
                 "§7Nombre actual: §f" + npc.getName(),
                 "",
@@ -100,6 +106,7 @@ public class NPCEditorGUI implements Listener {
             Material.PLAYER_HEAD,
             "§b§lCambiar Skin",
             "skin",
+            id,
             Arrays.asList(
                 "§7Skin personalizada o del catálogo.",
                 "",
@@ -111,6 +118,7 @@ public class NPCEditorGUI implements Listener {
             Material.COMMAND_BLOCK,
             "§6§lComandos y Acciones al Clic",
             "actions",
+            id,
             Arrays.asList(
                 "§7Configura qué comandos o acciones",
                 "§7ejecutará el NPC al recibir un clic.",
@@ -126,6 +134,7 @@ public class NPCEditorGUI implements Listener {
             Material.ENDER_EYE,
             "§d§lMirar al Jugador",
             "look",
+            id,
             Arrays.asList(
                 "§7Estado: " + (lookAt ? "§aActivado (Gira cuerpo y cabeza)" : "§cDesactivado (Estático)"),
                 "",
@@ -139,6 +148,7 @@ public class NPCEditorGUI implements Listener {
             Material.GLOWSTONE_DUST,
             "§6§lEfecto de Brillo (Glow)",
             "glow",
+            id,
             Arrays.asList(
                 "§7Estado: " + (hasGlow ? "§a" + glow : "§cDesactivado"),
                 "",
@@ -150,6 +160,7 @@ public class NPCEditorGUI implements Listener {
             Material.DIAMOND_CHESTPLATE,
             "§a§lEquipamiento",
             "equip",
+            id,
             Arrays.asList(
                 "§7Copia ítems de tu inventario al NPC:",
                 "§f- Clic Izquierdo: §7Copiar tu mano principal",
@@ -163,6 +174,7 @@ public class NPCEditorGUI implements Listener {
             Material.NAME_TAG,
             "§f§lVisibilidad del Nametag",
             "nametag",
+            id,
             Arrays.asList(
                 "§7Nametag sobre la cabeza: " + (showNametag ? "§aVisible" : "§cOculto"),
                 "",
@@ -174,6 +186,7 @@ public class NPCEditorGUI implements Listener {
             Material.OAK_SIGN,
             "§d§l✦ Menú de Hologramas",
             "holograms",
+            id,
             Arrays.asList(
                 "§7Configura líneas flotantes, colores",
                 "§7y textos informativos sobre el NPC.",
@@ -189,6 +202,7 @@ public class NPCEditorGUI implements Listener {
             Material.GLASS_BOTTLE,
             "§7§lInvisibilidad",
             "invisible",
+            id,
             Arrays.asList(
                 "§7Estado: " + (invisible ? "§aInvisible" : "§cVisible"),
                 "",
@@ -200,6 +214,7 @@ public class NPCEditorGUI implements Listener {
             Material.COMPASS,
             "§e§lMover a mi posición",
             "move",
+            id,
             Arrays.asList(
                 "§7Teletransporta este NPC a tu",
                 "§7ubicación y orientación actual.",
@@ -212,6 +227,7 @@ public class NPCEditorGUI implements Listener {
             Material.BARRIER,
             "§c§lEliminar NPC",
             "delete",
+            id,
             Arrays.asList(
                 "§4¡Atención! Esta acción no se puede deshacer.",
                 "",
@@ -223,6 +239,7 @@ public class NPCEditorGUI implements Listener {
             Material.RED_STAINED_GLASS_PANE,
             "§c✕ Cerrar",
             "close",
+            id,
             Collections.singletonList("§7Cierra este menú de configuración")
         ));
 
@@ -232,10 +249,6 @@ public class NPCEditorGUI implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
-        UUID npcId = editingNpcMap.get(player.getUniqueId());
-        String title = event.getView().getTitle();
-        boolean isOurTitle = title != null && title.startsWith(GUI_TITLE_PREFIX);
-        if (npcId == null && !isOurTitle) return;
 
         ItemStack item = event.getCurrentItem();
         if (item == null || !item.hasItemMeta()) return;
@@ -244,6 +257,21 @@ public class NPCEditorGUI implements Listener {
         if (meta == null) return;
 
         String action = meta.getPersistentDataContainer().get(keyAction, PersistentDataType.STRING);
+        String idStr = meta.getPersistentDataContainer().get(keyNpcId, PersistentDataType.STRING);
+
+        UUID npcId = null;
+        if (idStr != null) {
+            try {
+                npcId = UUID.fromString(idStr);
+                editingNpcMap.put(player.getUniqueId(), npcId);
+            } catch (IllegalArgumentException ignored) {}
+        }
+        if (npcId == null) {
+            npcId = editingNpcMap.get(player.getUniqueId());
+        }
+
+        String title = event.getView().getTitle();
+        boolean isOurTitle = title != null && title.startsWith(GUI_TITLE_PREFIX);
         if (action == null && !isOurTitle) return;
 
         event.setCancelled(true);
@@ -381,7 +409,6 @@ public class NPCEditorGUI implements Listener {
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
-        editingNpcMap.remove(event.getPlayer().getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -418,7 +445,7 @@ public class NPCEditorGUI implements Listener {
         });
     }
 
-    private ItemStack makeItem(Material material, String name, String action, List<String> lore) {
+    private ItemStack makeItem(Material material, String name, String action, UUID npcId, List<String> lore) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
@@ -426,6 +453,9 @@ public class NPCEditorGUI implements Listener {
             if (lore != null) meta.setLore(lore);
             if (action != null) {
                 meta.getPersistentDataContainer().set(keyAction, PersistentDataType.STRING, action);
+            }
+            if (npcId != null) {
+                meta.getPersistentDataContainer().set(keyNpcId, PersistentDataType.STRING, npcId.toString());
             }
             item.setItemMeta(meta);
         }

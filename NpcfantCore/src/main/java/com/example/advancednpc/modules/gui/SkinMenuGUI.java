@@ -45,18 +45,19 @@ public class SkinMenuGUI implements Listener {
     private final NamespacedKey keySkinKey;
     private final NamespacedKey keySkinType;
     private final NamespacedKey keyPage;
-
+    private final NamespacedKey keyTargetNpc;
 
     private final Map<UUID, Integer> playerPages = new HashMap<>();
     private final Map<UUID, List<Map.Entry<String, SkinData>>> playerSkinList = new HashMap<>();
     private final Map<UUID, UUID> targetNpcMap = new java.util.concurrent.ConcurrentHashMap<>();
 
     public SkinMenuGUI(AdvancedNPCPlugin plugin) {
-        this.plugin      = plugin;
-        this.keyGuiItem  = new NamespacedKey(plugin, NBT_GUI_ITEM);
-        this.keySkinKey  = new NamespacedKey(plugin, NBT_SKIN_KEY);
-        this.keySkinType = new NamespacedKey(plugin, NBT_SKIN_TYPE);
-        this.keyPage     = new NamespacedKey(plugin, NBT_PAGE);
+        this.plugin       = plugin;
+        this.keyGuiItem   = new NamespacedKey(plugin, NBT_GUI_ITEM);
+        this.keySkinKey   = new NamespacedKey(plugin, NBT_SKIN_KEY);
+        this.keySkinType  = new NamespacedKey(plugin, NBT_SKIN_TYPE);
+        this.keyPage      = new NamespacedKey(plugin, NBT_PAGE);
+        this.keyTargetNpc = new NamespacedKey(plugin, "npcfant_skin_npcid");
     }
 
 
@@ -193,6 +194,8 @@ public class SkinMenuGUI implements Listener {
         int[] skinSlots = buildSkinSlots();
         int slotIdx = 0;
 
+        UUID targetNpcId = targetNpcMap.get(player.getUniqueId());
+
         for (int i = startIdx; i < endIdx && slotIdx < skinSlots.length; i++, slotIdx++) {
             Map.Entry<String, SkinData> entry = allSkins.get(i);
             String fullKey = entry.getKey();
@@ -204,7 +207,7 @@ public class SkinMenuGUI implements Listener {
                 ? skinManager.getPresetDisplayName(key)
                 : skinManager.getLocalDisplayName(key);
 
-            ItemStack skinItem = makeSkinItem(entry.getValue(), displayName, type, key);
+            ItemStack skinItem = makeSkinItem(entry.getValue(), displayName, type, key, targetNpcId);
             inv.setItem(skinSlots[slotIdx], skinItem);
         }
 
@@ -245,8 +248,14 @@ public class SkinMenuGUI implements Listener {
         if (clicked.getType() == Material.ARROW) {
             int curPage = playerPages.getOrDefault(player.getUniqueId(), 0);
             String name = meta.getDisplayName();
-            if (name.contains("Anterior")) openMenu(player, curPage - 1);
-            else if (name.contains("Siguiente")) openMenu(player, curPage + 1);
+            int nextPage = name.contains("Anterior") ? curPage - 1 : curPage + 1;
+            UUID tId = targetNpcMap.get(player.getUniqueId());
+            NPCEntity targetNpc = tId != null ? (NPCEntity) plugin.getNpcManager().getNPC(tId) : null;
+            if (targetNpc != null) {
+                openMenuForNPC(player, targetNpc, nextPage);
+            } else {
+                openMenu(player, nextPage);
+            }
             return;
         }
 
@@ -260,7 +269,14 @@ public class SkinMenuGUI implements Listener {
 
         NPCManager nm = plugin.getNpcManager();
         NPCEntity npc = null;
-        UUID targetId = targetNpcMap.remove(player.getUniqueId());
+        String stampedId = meta.getPersistentDataContainer().get(keyTargetNpc, PersistentDataType.STRING);
+        UUID targetId = null;
+        if (stampedId != null) {
+            try { targetId = UUID.fromString(stampedId); } catch (Exception ignored) {}
+        }
+        if (targetId == null) {
+            targetId = targetNpcMap.get(player.getUniqueId());
+        }
         if (targetId != null) {
             npc = (NPCEntity) nm.getNPC(targetId);
         }
@@ -282,6 +298,7 @@ public class SkinMenuGUI implements Listener {
             player.closeInventory();
             return;
         }
+        targetNpcMap.put(player.getUniqueId(), npc.getId());
         player.sendMessage(ChatColor.YELLOW + "[NpcFant] Aplicando skin '" +
             skinKey + "' al NPC '" + npc.getName() + "'...");
         player.closeInventory();
@@ -350,7 +367,7 @@ public class SkinMenuGUI implements Listener {
     }
 
     private ItemStack makeSkinItem(SkinData skin, String displayName,
-                                   String type, String key) {
+                                   String type, String key, UUID targetNpcId) {
         ItemStack item;
 
         try {
@@ -389,13 +406,16 @@ public class SkinMenuGUI implements Listener {
         meta.setDisplayName(ChatColor.WHITE + displayName);
         meta.setLore(Arrays.asList(
             badge,
-            ChatColor.GRAY + "Clic para aplicar al NPC más cercano",
+            ChatColor.GRAY + "Clic para aplicar al NPC seleccionado",
             "",
             ChatColor.DARK_GRAY + "Archivo: " + (type.equals("preset") ? key : key + ".png")
         ));
 
         meta.getPersistentDataContainer().set(keySkinKey,  PersistentDataType.STRING, key);
         meta.getPersistentDataContainer().set(keySkinType, PersistentDataType.STRING, type);
+        if (targetNpcId != null) {
+            meta.getPersistentDataContainer().set(keyTargetNpc, PersistentDataType.STRING, targetNpcId.toString());
+        }
 
         item.setItemMeta(meta);
         return item;

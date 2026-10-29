@@ -27,21 +27,24 @@ public class NPCNameColorGUI implements Listener {
 
     private final AdvancedNPCPlugin plugin;
     private final NamespacedKey keyColorCode;
+    private final NamespacedKey keyNpcId;
     private final Map<UUID, UUID> activeNpcMap = new ConcurrentHashMap<>();
 
     public NPCNameColorGUI(AdvancedNPCPlugin plugin) {
         this.plugin = plugin;
         this.keyColorCode = new NamespacedKey(plugin, "npcfant_name_color_code");
+        this.keyNpcId = new NamespacedKey(plugin, "npcfant_namecolor_npcid");
     }
 
     public void openGUI(Player player, NPCEntity npc) {
         if (player == null || npc == null) return;
-        activeNpcMap.put(player.getUniqueId(), npc.getId());
+        UUID id = npc.getId();
+        activeNpcMap.put(player.getUniqueId(), id);
 
         String title = GUI_TITLE_PREFIX + ChatColor.stripColor(npc.getName());
         Inventory inv = Bukkit.createInventory(null, GUI_SIZE, title);
 
-        ItemStack border = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", null, null);
+        ItemStack border = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", null, id, null);
         for (int i = 0; i < 9; i++) inv.setItem(i, border);
         for (int i = 27; i < 36; i++) inv.setItem(i, border);
         inv.setItem(9, border);
@@ -49,26 +52,27 @@ public class NPCNameColorGUI implements Listener {
         inv.setItem(18, border);
         inv.setItem(26, border);
 
-        inv.setItem(10, makeItem(Material.RED_CONCRETE, "§c§lRojo Claro (&c)", "&c", Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
-        inv.setItem(11, makeItem(Material.RED_TERRACOTTA, "§4§lRojo Oscuro (&4)", "&4", Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
-        inv.setItem(12, makeItem(Material.ORANGE_CONCRETE, "§6§lDorado (&6)", "&6", Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
-        inv.setItem(13, makeItem(Material.YELLOW_CONCRETE, "§e§lAmarillo (&e)", "&e", Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
-        inv.setItem(14, makeItem(Material.LIME_CONCRETE, "§a§lVerde Lima (&a)", "&a", Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
-        inv.setItem(15, makeItem(Material.GREEN_CONCRETE, "§2§lVerde Oscuro (&2)", "&2", Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
-        inv.setItem(16, makeItem(Material.LIGHT_BLUE_CONCRETE, "§b§lAqua (&b)", "&b", Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
+        inv.setItem(10, makeItem(Material.RED_CONCRETE, "§c§lRojo Claro (&c)", "&c", id, Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
+        inv.setItem(11, makeItem(Material.RED_TERRACOTTA, "§4§lRojo Oscuro (&4)", "&4", id, Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
+        inv.setItem(12, makeItem(Material.ORANGE_CONCRETE, "§6§lDorado (&6)", "&6", id, Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
+        inv.setItem(13, makeItem(Material.YELLOW_CONCRETE, "§e§lAmarillo (&e)", "&e", id, Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
+        inv.setItem(14, makeItem(Material.LIME_CONCRETE, "§a§lVerde Lima (&a)", "&a", id, Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
+        inv.setItem(15, makeItem(Material.GREEN_CONCRETE, "§2§lVerde Oscuro (&2)", "&2", id, Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
+        inv.setItem(16, makeItem(Material.LIGHT_BLUE_CONCRETE, "§b§lAqua (&b)", "&b", id, Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
 
-        inv.setItem(19, makeItem(Material.CYAN_CONCRETE, "§3§lCyan (&3)", "&3", Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
-        inv.setItem(20, makeItem(Material.BLUE_CONCRETE, "§9§lAzul Claro (&9)", "&9", Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
-        inv.setItem(21, makeItem(Material.BLUE_TERRACOTTA, "§1§lAzul Oscuro (&1)", "&1", Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
-        inv.setItem(22, makeItem(Material.PINK_CONCRETE, "§d§lRosa (&d)", "&d", Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
-        inv.setItem(23, makeItem(Material.PURPLE_CONCRETE, "§5§lMorado (&5)", "&5", Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
-        inv.setItem(24, makeItem(Material.WHITE_CONCRETE, "§f§lBlanco (&f)", "&f", Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
-        inv.setItem(25, makeItem(Material.LIGHT_GRAY_CONCRETE, "§7§lGris (&7)", "&7", Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
+        inv.setItem(19, makeItem(Material.CYAN_CONCRETE, "§3§lCyan (&3)", "&3", id, Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
+        inv.setItem(20, makeItem(Material.BLUE_CONCRETE, "§9§lAzul Claro (&9)", "&9", id, Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
+        inv.setItem(21, makeItem(Material.BLUE_TERRACOTTA, "§1§lAzul Oscuro (&1)", "&1", id, Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
+        inv.setItem(22, makeItem(Material.PINK_CONCRETE, "§d§lRosa (&d)", "&d", id, Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
+        inv.setItem(23, makeItem(Material.PURPLE_CONCRETE, "§5§lMorado (&5)", "&5", id, Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
+        inv.setItem(24, makeItem(Material.WHITE_CONCRETE, "§f§lBlanco (&f)", "&f", id, Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
+        inv.setItem(25, makeItem(Material.LIGHT_GRAY_CONCRETE, "§7§lGris (&7)", "&7", id, Arrays.asList("§7Aplica este color al nombre", "", "§eClic para seleccionar")));
 
         inv.setItem(31, makeItem(
             Material.ARROW,
             "§7← Volver al Editor",
             "back",
+            id,
             Collections.singletonList("§7Regresar al menú principal de configuración")
         ));
 
@@ -78,10 +82,8 @@ public class NPCNameColorGUI implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
-        UUID npcId = activeNpcMap.get(player.getUniqueId());
         String title = event.getView().getTitle();
         boolean isOurTitle = title != null && title.startsWith(GUI_TITLE_PREFIX);
-        if (npcId == null && !isOurTitle) return;
 
         ItemStack item = event.getCurrentItem();
         if (item == null || !item.hasItemMeta()) return;
@@ -94,6 +96,15 @@ public class NPCNameColorGUI implements Listener {
 
         event.setCancelled(true);
         if (colorCode == null) return;
+
+        UUID npcId = activeNpcMap.get(player.getUniqueId());
+        String stampedId = meta.getPersistentDataContainer().get(keyNpcId, PersistentDataType.STRING);
+        if (stampedId != null) {
+            try {
+                npcId = UUID.fromString(stampedId);
+                activeNpcMap.put(player.getUniqueId(), npcId);
+            } catch (Exception ignored) {}
+        }
 
         if (npcId == null) {
             player.closeInventory();
@@ -128,10 +139,9 @@ public class NPCNameColorGUI implements Listener {
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
-        activeNpcMap.remove(event.getPlayer().getUniqueId());
     }
 
-    private ItemStack makeItem(Material material, String name, String code, List<String> lore) {
+    private ItemStack makeItem(Material material, String name, String code, UUID npcId, List<String> lore) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
@@ -139,6 +149,9 @@ public class NPCNameColorGUI implements Listener {
             if (lore != null) meta.setLore(lore);
             if (code != null) {
                 meta.getPersistentDataContainer().set(keyColorCode, PersistentDataType.STRING, code);
+            }
+            if (npcId != null) {
+                meta.getPersistentDataContainer().set(keyNpcId, PersistentDataType.STRING, npcId.toString());
             }
             item.setItemMeta(meta);
         }
