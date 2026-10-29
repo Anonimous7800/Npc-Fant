@@ -2,6 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Modrinth](https://img.shields.io/badge/Modrinth-npc--fant-00c853.svg)](https://modrinth.com/plugin/npc-fant)
+[![Discord](https://img.shields.io/badge/Discord-Soporte-5865F2.svg?logo=discord&logoColor=white)](https://discord.gg/GS6hEw52BB)
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.17--26.3-brightgreen.svg)](https://www.minecraft.net)
 [![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://www.java.com)
 [![Maven](https://img.shields.io/badge/Build-Maven-red.svg)](https://maven.apache.org/)
@@ -84,7 +85,7 @@ For a full table of permissions, arguments, and details see the **[Guide command
 
 **Made with ❤️ by anonimous1221 (plusstaff035@gmail.com)**
 
-[GitHub](https://github.com/Anonimous7800/Npc-Fant) • [License](LICENSE) • [Plugin Guide](GUIDE.md)
+[GitHub](https://github.com/Anonimous7800/Npc-Fant) • [Discord Community](https://discord.gg/GS6hEw52BB) • [License](LICENSE) • [Plugin Guide](GUIDE.md)
 
 Last updated: October 2026
 

@@ -10,6 +10,7 @@
 [![Server Platforms](https://img.shields.io/badge/Platform-Paper%20%7C%20Purpur%20%7C%20Spigot-ff9800?style=for-the-badge)](https://modrinth.com/plugin/npc-fant)
 [![Java](https://img.shields.io/badge/Java-17%20--%2025-blue?style=for-the-badge&logo=openjdk)](https://modrinth.com/plugin/npc-fant)
 [![PacketEvents](https://img.shields.io/badge/Engine-PacketEvents%202.13-00e5ff?style=for-the-badge)](https://modrinth.com/plugin/npc-fant)
+[![Discord](https://img.shields.io/badge/Discord-Soporte%20%26%20Comunidad-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/GS6hEw52BB)
 
 </div>
 
@@ -86,10 +87,19 @@ Tested and natively supported on:
 
 ---
 
+## 💬 Soporte & Comunidad en Discord
+
+¿Tienes preguntas, dudas o necesitas ayuda configurando el plugin?
+Únete a nuestra comunidad de Discord:
+- 🌐 **Servidor de Discord:** [https://discord.gg/GS6hEw52BB](https://discord.gg/GS6hEw52BB)
+- 📌 **Canal de soporte:** `#dudas-de-plugin` (ID: `1565188514138816622`)
+
+---
+
 <div align="center">
 
 **Developed by anonimous1221**  
-*Source code & Community on [GitHub](https://github.com/Anonimous7800/Npc-Fant)*
+*Source code on [GitHub](https://github.com/Anonimous7800/Npc-Fant) • Community on [Discord](https://discord.gg/GS6hEw52BB)*
 
 </div>
 
