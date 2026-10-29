@@ -294,9 +294,6 @@ public class NPCHologramGUI implements Listener {
             player.closeInventory();
             return;
         }
-            player.closeInventory();
-            return;
-        }
 
         if (isColorGUI) {
             String colorCode = meta.getPersistentDataContainer().get(keyColorCode, PersistentDataType.STRING);
