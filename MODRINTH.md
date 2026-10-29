@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![NpcFant Icon](logo/logo.png)
+<img src="https://raw.githubusercontent.com/Anonimous7800/Npc-Fant/main/logo/modrinth_icon.jpg" alt="NpcFant Icon" width="220" style="border-radius: 18px;" />
 
 **The ultra-lightweight, high-performance packet-based NPC and Hologram plugin for modern Minecraft servers.**
 
@@ -92,3 +92,4 @@ Tested and natively supported on:
 *Source code & Community on [GitHub](https://github.com/Anonimous7800/Npc-Fant)*
 
 </div>
+
