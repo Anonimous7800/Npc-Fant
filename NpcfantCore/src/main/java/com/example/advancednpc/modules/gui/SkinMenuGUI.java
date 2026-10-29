@@ -268,11 +268,17 @@ public class SkinMenuGUI implements Listener {
             Optional<NPCEntity> closest = nm.getNearestNPC(player.getLocation(), INTERACTION_DIST);
             if (closest.isPresent()) {
                 npc = closest.get();
+            } else if (nm.getAllNPCs().size() == 1) {
+                npc = (NPCEntity) nm.getAllNPCs().iterator().next();
             }
         }
         if (npc == null) {
-            player.sendMessage(ChatColor.RED + "[NpcFant] No hay ningún NPC cerca (≤" +
-                (int) INTERACTION_DIST + " bloques).");
+            if (!nm.getAllNPCs().isEmpty() && nm.getSelectorGUI() != null) {
+                player.sendMessage(ChatColor.YELLOW + "[NpcFant] Selecciona qué NPC recibirá la skin:");
+                nm.getSelectorGUI().openGUI(player);
+                return;
+            }
+            player.sendMessage(ChatColor.RED + "[NpcFant] No hay ningún NPC disponible para aplicar skins.");
             player.closeInventory();
             return;
         }

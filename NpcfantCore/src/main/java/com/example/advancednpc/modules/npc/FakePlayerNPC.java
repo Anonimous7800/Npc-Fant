@@ -277,10 +277,18 @@ public class FakePlayerNPC {
         this.location = newLocation.clone();
         for (UUID uid : new HashSet<>(spawnedFor)) {
             Player p = Bukkit.getPlayer(uid);
-            if (p == null || !p.isOnline()) continue;
-            despawnForPlayer(p);
-            if (newLocation.getWorld() != null && p.getWorld().equals(newLocation.getWorld())) {
-                spawnForPlayer(p);
+            if (p != null && p.isOnline()) {
+                despawnForPlayer(p);
+            }
+        }
+        spawnedFor.clear();
+        seatSpawnedFor.clear();
+
+        if (newLocation.getWorld() != null) {
+            for (Player p : newLocation.getWorld().getPlayers()) {
+                if (p.isOnline() && p.getLocation().distanceSquared(newLocation) <= (48.0 * 48.0)) {
+                    spawnForPlayer(p);
+                }
             }
         }
     }

@@ -223,14 +223,34 @@ public class NPCCommand implements CommandExecutor, TabCompleter {
             case "hologram":
             case "holo": {
                 if (args.length >= 2 && args[1].equalsIgnoreCase("gui")) {
-                    String targetArg = args.length >= 3 ? args[2] : "nearest";
-                    Optional<NPCEntity> target = npcManager.resolveNPC(targetArg, player);
-                    if (target.isPresent()) {
+                    if (args.length >= 3) {
+                        Optional<NPCEntity> target = npcManager.resolveNPC(args[2], player);
+                        if (target.isPresent()) {
+                            if (npcManager.getHologramGUI() != null) {
+                                npcManager.getHologramGUI().openGUI(player, target.get());
+                            }
+                        } else {
+                            player.sendMessage(getPrefix() + ChatColor.RED + "NPC no encontrado.");
+                        }
+                        return true;
+                    }
+
+                    Optional<NPCEntity> nearest = npcManager.getNearestNPC(player.getLocation(), 15.0);
+                    if (nearest.isPresent()) {
                         if (npcManager.getHologramGUI() != null) {
-                            npcManager.getHologramGUI().openGUI(player, target.get());
+                            npcManager.getHologramGUI().openGUI(player, nearest.get());
+                        }
+                    } else if (npcManager.getAllNPCs().size() == 1) {
+                        NPCEntity single = (NPCEntity) npcManager.getAllNPCs().iterator().next();
+                        if (npcManager.getHologramGUI() != null) {
+                            npcManager.getHologramGUI().openGUI(player, single);
+                        }
+                    } else if (!npcManager.getAllNPCs().isEmpty()) {
+                        if (npcManager.getSelectorGUI() != null) {
+                            npcManager.getSelectorGUI().openGUI(player);
                         }
                     } else {
-                        player.sendMessage(getPrefix() + ChatColor.RED + "NPC no encontrado.");
+                        player.sendMessage(getPrefix() + ChatColor.RED + "No hay ningún NPC creado en el servidor.");
                     }
                     return true;
                 }

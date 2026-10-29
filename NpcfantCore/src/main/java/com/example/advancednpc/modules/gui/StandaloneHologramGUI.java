@@ -162,6 +162,20 @@ public class StandaloneHologramGUI implements Listener {
             )
         ));
 
+        inv.setItem(49, makeItem(
+            Material.PLAYER_HEAD,
+            "§6§l✦ Hologramas de NPCs",
+            "npc_holos",
+            null,
+            -1,
+            Arrays.asList(
+                "§7Administrar hologramas y textos flotantes",
+                "§7de los NPCs creados en el servidor.",
+                "",
+                "§a▶ Clic para abrir configuración de NPCs"
+            )
+        ));
+
         inv.setItem(50, makeItem(
             Material.RED_STAINED_GLASS_PANE,
             "§c✕ Cerrar",
@@ -439,6 +453,23 @@ public class StandaloneHologramGUI implements Listener {
 
         switch (action) {
             case "close" -> player.closeInventory();
+
+            case "npc_holos" -> {
+                player.closeInventory();
+                var all = plugin.getNpcManager().getAllNPCs();
+                if (all.isEmpty()) {
+                    player.sendMessage("§c[NpcFant] No hay ningún NPC creado en el servidor.");
+                } else if (all.size() == 1) {
+                    var single = (com.example.advancednpc.npc.NPCEntity) all.iterator().next();
+                    if (plugin.getNpcManager().getHologramGUI() != null) {
+                        plugin.getNpcManager().getHologramGUI().openGUI(player, single);
+                    }
+                } else {
+                    if (plugin.getNpcManager().getSelectorGUI() != null) {
+                        plugin.getNpcManager().getSelectorGUI().openGUI(player);
+                    }
+                }
+            }
 
             case "create_holo" -> {
                 pendingPrompts.put(player.getUniqueId(), new ChatPrompt(PromptType.CREATE_HOLO, null, -1));
