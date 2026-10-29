@@ -92,7 +92,7 @@ jobs:
               JAR_SIZE=$(du -h "NpcfantCore/target/Npcfant-2.0.jar" | cut -f1)
             fi
 
-            REPORT_CONTENT=$(printf "# Npc-Fant Build/Preview 2.0.%s (%s)\n-# %s\n## Update Summary & Applied Changes\n__**Commit Details**__\n- %s\n  - Author: \`%s\` | Branch: \`%s\`\n  - Stats: %s\n__**Modified Files**__\n%s\n__**Maven Build & Artifacts**__\n- Compiled all 23 modules with Java 17 (\`Npcfant-2.0.jar\` — %s)\n  - CI Run: %s\n## Features and Bug Fixes\n__**Holograms & Virtual Entities**__\n- 100%% packet-based virtual ArmorStands via PacketEvents (zero world entities)\n- Full Hex color (\`&#RRGGBB\`), per-player variables, and PlaceholderAPI support\n__**NPCs & Animations**__\n- Hidden 16-char native nametag via Scoreboard Team packets in favor of full-length Hologram nametags\n- Dynamic pose height adjustment and \`/npcfant animate\` packet animations\n\n...And many more!\n💬 **Dudas del plugin:** <#1565188514138816622> | **Discord:** https://discord.gg/GS6hEw52BB\n🔗 https://github.com/Anonimous7800/Npc-Fant" \
+            REPORT_CONTENT=$(printf "<@&1565191900485652580>\n# Npc-Fant Build/Preview 2.0.%s (%s)\n-# %s\n## Update Summary & Applied Changes\n__**Commit Details**__\n- %s\n  - Author: \`%s\` | Branch: \`%s\`\n  - Stats: %s\n__**Modified Files**__\n%s\n__**Maven Build & Artifacts**__\n- Compiled all 23 modules with Java 17 (\`Npcfant-2.0.jar\` — %s)\n  - CI Run: %s\n## Features and Bug Fixes\n__**Holograms & Virtual Entities**__\n- 100%% packet-based virtual ArmorStands via PacketEvents (zero world entities)\n- Full Hex color (\`&#RRGGBB\`), per-player variables, and PlaceholderAPI support\n__**NPCs & Animations**__\n- Hidden 16-char native nametag via Scoreboard Team packets in favor of full-length Hologram nametags\n- Dynamic pose height adjustment and \`/npcfant animate\` packet animations\n\n📥 **Modrinth:** https://modrinth.com/plugin/npcfant\n💬 **Dudas del plugin:** <#1565188514138816622> | **Discord:** https://discord.gg/GS6hEw52BB\n🔗 https://github.com/Anonimous7800/Npc-Fant" \
               "$RUN_NUM" "$SHORT_SHA" "$COMMIT_URL" "$COMMIT_TITLE" "$COMMIT_ACTOR" "$BRANCH_NAME" "$DIFF_STATS" "$FILE_BULLETS" "$JAR_SIZE" "$RUN_URL")
           else
             ERROR_LINES=$(grep -E "\[ERROR\]" build.log | sed 's/\[ERROR\] /  - /g' | head -n 8 || true)
@@ -100,7 +100,7 @@ jobs:
               ERROR_LINES=$(tail -n 8 build.log | sed 's/^/  - /g' || true)
             fi
 
-            REPORT_CONTENT=$(printf "# Npc-Fant Build/Preview 2.0.%s — FAILED (%s)\n-# %s\n## Build Failure Report\n__**Commit Details**__\n- %s\n  - Author: \`%s\` | Branch: \`%s\`\n  - Stats: %s\n__**Modified Files**__\n%s\n__**Compiler & Maven Errors**__\n- Maven build exited with errors:\n%s\n\n💬 **Dudas del plugin:** <#1565188514138816622> | **Discord:** https://discord.gg/GS6hEw52BB\nCheck the full build log: %s" \
+            REPORT_CONTENT=$(printf "<@&1565191900485652580>\n# Npc-Fant Build/Preview 2.0.%s — FAILED (%s)\n-# %s\n## Build Failure Report\n__**Commit Details**__\n- %s\n  - Author: \`%s\` | Branch: \`%s\`\n  - Stats: %s\n__**Modified Files**__\n%s\n__**Compiler & Maven Errors**__\n- Maven build exited with errors:\n%s\n\n📥 **Modrinth:** https://modrinth.com/plugin/npcfant\n💬 **Dudas del plugin:** <#1565188514138816622> | **Discord:** https://discord.gg/GS6hEw52BB\nCheck the full build log: %s" \
               "$RUN_NUM" "$SHORT_SHA" "$RUN_URL" "$COMMIT_TITLE" "$COMMIT_ACTOR" "$BRANCH_NAME" "$DIFF_STATS" "$FILE_BULLETS" "$ERROR_LINES" "$RUN_URL")
           fi
 
@@ -110,7 +110,10 @@ jobs:
             --arg content "$REPORT_CONTENT" \
             '{
               username: "NpcFant Changelog",
-              content: $content
+              content: $content,
+              allowed_mentions: {
+                parse: ["roles", "users"]
+              }
             }' > payload.json
 
           HTTP_CODE=$(curl -sS -o discord_resp.txt -w "%{http_code}" -H "Content-Type: application/json" -X POST -d @payload.json "$WEBHOOK_URL" || echo "000")
